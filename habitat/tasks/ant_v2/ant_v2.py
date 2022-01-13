@@ -4,9 +4,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, List, Optional, Tuple
-from collections import defaultdict
 import math
+from collections import defaultdict
+from typing import Any, List, Optional, Tuple
 
 import attr
 import numpy as np
@@ -20,7 +20,6 @@ from habitat.core.embodied_task import (
     Measure,
     SimulatorTaskAction,
 )
-from habitat.tasks.nav.nav import NavigationTask
 from habitat.core.logging import logger
 from habitat.core.registry import registry
 from habitat.core.simulator import (
@@ -34,6 +33,7 @@ from habitat.core.simulator import (
 from habitat.core.spaces import ActionSpace
 from habitat.core.utils import not_none_validator, try_cv2_import
 from habitat.sims.habitat_simulator.actions import HabitatSimActions
+from habitat.tasks.nav.nav import NavigationTask
 from habitat.tasks.utils import cartesian_to_polar
 from habitat.utils.geometry_utils import (
     quaternion_from_coeff,
@@ -56,6 +56,7 @@ except ImportError:
 # import quadruped_wrapper
 from habitat.tasks.ant_v2.ant_robot import AntV2Robot
 
+
 def merge_sim_episode_with_object_config(sim_config, episode):
     sim_config.defrost()
     sim_config.ep_info = [episode.__dict__]
@@ -66,7 +67,6 @@ def merge_sim_episode_with_object_config(sim_config, episode):
 @registry.register_simulator(name="Ant-v2-sim")
 class AntV2Sim(HabitatSim):
     def __init__(self, config):
-        print("Sim loading..")
         super().__init__(config)
 
         agent_config = self.habitat_config
@@ -76,6 +76,7 @@ class AntV2Sim(HabitatSim):
         self.prev_loaded_navmesh = None
         self.prev_scene_id = None
         self.enable_physics = True
+        self.robot = None
 
         # Number of physics updates per action
         self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
@@ -100,9 +101,8 @@ class AntV2Sim(HabitatSim):
         # Is this relevant?
         if self.concur_render:
             self.renderer.acquire_gl_context()
-    
+
     def reconfigure(self, config):
-        print("Sim reconfiguring..")
         ep_info = config["ep_info"][0]
         # ep_info = self._update_config(ep_info)
 
@@ -117,34 +117,42 @@ class AntV2Sim(HabitatSim):
 
         self._try_acquire_context()
 
-        # # get the primitive assets attributes manager
-        prim_templates_mgr = self.get_asset_template_manager()
+        if self.robot is None: # Load the environment
+            # # get the primitive assets attributes manager
+            prim_templates_mgr = self.get_asset_template_manager()
 
-        # get the physics object attributes manager
-        obj_templates_mgr = self.get_object_template_manager()
+            # get the physics object attributes manager
+            obj_templates_mgr = self.get_object_template_manager()
 
-        # get the rigid object manager
-        rigid_obj_mgr = self.get_rigid_object_manager()
+            # get the rigid object manager
+            rigid_obj_mgr = self.get_rigid_object_manager()
 
+            # add ant
+            self.robot = AntV2Robot(self.habitat_config.ROBOT_URDF, self)
+            self.robot.reconfigure()
+            self.robot.base_pos = mn.Vector3(
+                self.habitat_config.AGENT_0.START_POSITION
+            )
+            self.robot.base_rot = math.pi / 2
 
-        # add ant
-        self.robot = AntV2Robot(self.habitat_config.ROBOT_URDF, self)
-        self.robot.reconfigure()
-        self.robot.base_pos = mn.Vector3(self.habitat_config.AGENT_0.START_POSITION)
-        self.robot.base_rot = math.pi / 2
+            # add floor
+            cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
+            floor = obj_templates_mgr.get_template_by_handle(cube_handle)
+            floor.scale = np.array([20.0, 0.05, 20.0])
 
-        # add floor
-        cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
-        floor = obj_templates_mgr.get_template_by_handle(cube_handle)
-        floor.scale = np.array([20.0, 0.05, 20.0])
+            obj_templates_mgr.register_template(floor, "floor")
+            floor_obj = rigid_obj_mgr.add_object_by_template_handle("floor")
+            floor_obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
 
-        obj_templates_mgr.register_template(floor, "floor")
-        floor_obj = rigid_obj_mgr.add_object_by_template_handle("floor")
-        floor_obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
+            floor_obj.translation = np.array([2.50, -2, 0.5])
+            floor_obj.motion_type = habitat_sim.physics.MotionType.STATIC
+        else: # environment is already loaded; reset the Ant
+            self.robot.reset()
+            self.robot.base_pos = mn.Vector3(
+                self.habitat_config.AGENT_0.START_POSITION
+            )
+            self.robot.base_rot = math.pi / 2
 
-        floor_obj.translation = np.array([2.50, -2, 0.5])
-        floor_obj.motion_type = habitat_sim.physics.MotionType.STATIC
-    
     def step(self, action):
         # what to do with action?
 
@@ -153,7 +161,6 @@ class AntV2Sim(HabitatSim):
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
-
 
     # Need to figure out MVP for the simulator + how to set up a camera which isn't part of the obs space.
     # Also need to figure out how to define rewards based on measurements/observations
@@ -174,7 +181,9 @@ class AntObservationSpaceSensor(Sensor):
         return self.cls_uuid
 
     def _get_observation_space(self, *args: Any, **kwargs: Any):
-        return spaces.Box(low=-np.inf, high=np.inf, shape=(27,), dtype=np.float)
+        return spaces.Box(
+            low=-np.inf, high=np.inf, shape=(27,), dtype=np.float
+        )
 
     def _get_sensor_type(self, *args: Any, **kwargs: Any):
         return SensorTypes.NORMAL
@@ -185,31 +194,32 @@ class AntObservationSpaceSensor(Sensor):
         obs = self._sim.robot.observational_space
         return obs
 
-@registry.register_sensor
-class AntObservationSpaceSensor(Sensor):
 
-    cls_uuid: str = "ant_observation_space_sensor"
+# @registry.register_sensor
+# class AntObservationSpaceSensor(Sensor):
 
-    def __init__(
-        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
-    ):
-        self._sim = sim
-        super().__init__(config=config)
+#     cls_uuid: str = "ant_observation_space_sensor"
 
-    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
-        return self.cls_uuid
+#     def __init__(
+#         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+#     ):
+#         self._sim = sim
+#         super().__init__(config=config)
 
-    def _get_observation_space(self, *args: Any, **kwargs: Any):
-        return spaces.Box(low=-np.inf, high=np.inf, shape=(27,), dtype=np.float)
+#     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+#         return self.cls_uuid
 
-    def _get_sensor_type(self, *args: Any, **kwargs: Any):
-        return SensorTypes.NORMAL
+#     def _get_observation_space(self, *args: Any, **kwargs: Any):
+#         return spaces.Box(low=-np.inf, high=np.inf, shape=(27,), dtype=np.float)
 
-    def get_observation(
-        self, observations, episode, *args: Any, **kwargs: Any
-    ):
-        obs = self._sim.robot.observational_space
-        return obs
+#     def _get_sensor_type(self, *args: Any, **kwargs: Any):
+#         return SensorTypes.NORMAL
+
+#     def get_observation(
+#         self, observations, episode, *args: Any, **kwargs: Any
+#     ):
+#         obs = self._sim.robot.observational_space
+#         return obs
 
 
 @registry.register_measure
@@ -236,10 +246,11 @@ class XLocation(Measure):
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
         if self._metric is None:
-            self._metric = {"x_location": None}
+            self._metric = None
 
         current_position = self._sim.robot.base_pos
-        self._metric["x_location"] = current_position.x
+        self._metric = current_position.x
+
 
 @registry.register_task_action
 class LegRelPosAction(SimulatorTaskAction):
@@ -252,7 +263,7 @@ class LegRelPosAction(SimulatorTaskAction):
     def action_space(self):
         return spaces.Box(
             shape=(self._config.LEG_JOINT_DIMENSIONALITY,),
-            low=0,
+            low=-1,
             high=1,
             dtype=np.float32,
         )
@@ -269,6 +280,7 @@ class LegRelPosAction(SimulatorTaskAction):
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
         return None
+
 
 @registry.register_task_action
 class LegAction(SimulatorTaskAction):
@@ -301,7 +313,8 @@ class AntV2Task(NavigationTask):
     def __init__(
         self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None
     ) -> None:
-        #config.enable_physics = True
+        # config.enable_physics = True
         super().__init__(config=config, sim=sim, dataset=dataset)
+
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)
