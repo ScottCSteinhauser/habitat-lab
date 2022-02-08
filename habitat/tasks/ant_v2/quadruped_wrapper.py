@@ -121,6 +121,8 @@ class QuadrupedRobot(RobotInterface):
         # set initial states and targets
         self.hip_joint_pos = self.params.hip_init_params
         self.ankle_joint_pos = self.params.ankle_init_params
+        #set the joint states to the motor target values
+        self.leg_joint_state = self.leg_joint_pos
 
         self._update_motor_settings_cache()
 
@@ -155,8 +157,8 @@ class QuadrupedRobot(RobotInterface):
 
         # Guard against out of limit joints
         # TODO: should auto clamping be enabled instead? How often should we clamp?
-        if self._limit_robo_joints:
-            self.sim_obj.clamp_joint_limits()
+        #if self._limit_robo_joints:
+        #    self.sim_obj.clamp_joint_limits()
 
         self.sim_obj.awake = True
 
@@ -167,6 +169,8 @@ class QuadrupedRobot(RobotInterface):
         # reset the initial joint positions
         self.hip_joint_pos = self.params.hip_init_params
         self.ankle_joint_pos = self.params.ankle_init_params
+        #set the joint states to the motor target values
+        self.leg_joint_state = self.leg_joint_pos
 
         self._update_motor_settings_cache()
         self.update()
@@ -224,6 +228,16 @@ class QuadrupedRobot(RobotInterface):
 
         for i, jidx in enumerate(self.params.hip_joints + self.params.ankle_joints):
             self._set_motor_pos(jidx, ctrl[i])
+
+    @property
+    def leg_joint_state(self) -> np.ndarray:
+        """Get the current joint state for the legs"""
+        return self.sim_obj.joint_positions
+    
+    @leg_joint_state.setter
+    def leg_joint_state(self, ctrl: List[float]) -> None:
+        """Set the current joint state for the legs"""
+        self.sim_obj.joint_positions = ctrl
 
     def _set_motor_pos(self, joint, ctrl):
         self.joint_motors[joint][1].position_target = ctrl

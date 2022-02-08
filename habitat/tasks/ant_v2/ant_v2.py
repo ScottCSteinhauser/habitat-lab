@@ -80,9 +80,9 @@ class AntV2Sim(HabitatSim):
         self.robot = None
 
         # Number of physics updates per action
-        self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
+        #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
         # The physics update time step.
-        self.ctrl_freq = agent_config.CTRL_FREQ
+        #self.ctrl_freq = agent_config.CTRL_FREQ
         # Effective control speed is (ctrl_freq/ac_freq_ratio)
         self.load_obstacles = False
         # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
@@ -176,9 +176,9 @@ class AntV2Sim(HabitatSim):
 
     def step(self, action):
         # what to do with action?
-
+        #print("     ... stepping")
         # returns new observation after step
-        self.step_physics(1.0 / 60.0)
+        self.step_physics(1.0 / 30.0)
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
@@ -203,7 +203,7 @@ class AntObservationSpaceSensor(Sensor):
 
     def _get_observation_space(self, *args: Any, **kwargs: Any):
         return spaces.Box(
-            low=-np.inf, high=np.inf, shape=(29,), dtype=np.float
+            low=-np.inf, high=np.inf, shape=(37,), dtype=np.float
         )
 
     def _get_sensor_type(self, *args: Any, **kwargs: Any):
@@ -244,7 +244,40 @@ class XLocation(Measure):
 
         current_position = self._sim.robot.base_pos
         self._metric = current_position.x
-        # print(self._metric)
+        #print(self._metric)
+
+@registry.register_measure
+class JointStateError(Measure):
+    """The measure calculates the error between current and target joint states"""
+
+    cls_uuid: str = "JOINT_STATE_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        self._sim = sim
+        self._config = config
+        self._metric = None
+        #TODO: dynamic targets, for now just a standard pose
+        self.target_state = np.ones(8)*0.5
+        super().__init__()
+
+    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+        return self.cls_uuid
+
+    def reset_metric(self, episode, *args: Any, **kwargs: Any):
+        self._metric = None
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+
+        current_state = self._sim.robot.leg_joint_state
+        
+        self._metric = -np.linalg.norm(np.abs(current_state - self.target_state))
+        #print(self._metric)
 
 
 @registry.register_task_action
@@ -266,13 +299,18 @@ class LegRelPosAction(SimulatorTaskAction):
     def step(self, delta_pos, should_step=True, *args, **kwargs):
         # clip from -1 to 1
         delta_pos = np.clip(delta_pos, -1, 1)
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
-        # The actual joint positions
+        #print(f"delta_pos = {delta_pos}")
+
         self._sim: AntV2Sim
-        self._sim.robot.leg_joint_pos = (
-            delta_pos + self._sim.robot.leg_joint_pos
-        )
+        #clip the motor targets to the joint range
+        self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        #print(f"leg_joint_motor_pos = {self._sim.robot.leg_joint_pos}")
+        #print(f"leg_joint_positions = {self._sim.robot.leg_joint_state}")
+        #print(f"leg_joint_pos_limits = {self._sim.robot.joint_limits}")
         if should_step:
+            #print("action stepping")
             return self._sim.step(HabitatSimActions.LEG_VEL)
         return None
 

@@ -438,6 +438,8 @@ class PPOTrainer(BaseRLTrainer):
                 env_slice,
             ]
 
+            #print(step_batch["observations"])
+
             profiling_wrapper.range_push("compute actions")
             (
                 values,
@@ -1091,7 +1093,7 @@ class PPOTrainer(BaseRLTrainer):
                             checkpoint_idx=checkpoint_index,
                             metrics=self._extract_scalars_from_info(infos[i]),
                             tb_writer=writer,
-                            fps = 60
+                            fps = 30
                         )
 
                         rgb_frames[i] = []

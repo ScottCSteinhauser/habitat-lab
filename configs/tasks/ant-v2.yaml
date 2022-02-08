@@ -1,5 +1,5 @@
 ENVIRONMENT:
-    MAX_EPISODE_STEPS: 300
+    MAX_EPISODE_STEPS: 210
 
 SIMULATOR:
   TYPE: Ant-v2-sim
@@ -29,8 +29,9 @@ SIMULATOR:
         NORMALIZE_DEPTH: True
   LEG_REST: [0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0]
   ROBOT_URDF: data/robots/ant.urdf
-  CTRL_FREQ: 120.0
-  AC_FREQ_RATIO: 4
+  #NOTE: these below are unused
+  #CTRL_FREQ: 120.0
+  #AC_FREQ_RATIO: 4
 
   # LOAD_OBSTACLES: True # Loads obstacles for the ant to avoid
 
@@ -50,14 +51,16 @@ TASK:
 
   X_LOCATION:
     TYPE: "XLocation"
-  MEASUREMENTS: ["X_LOCATION"]
+  JOINT_STATE_ERROR:
+    TYPE: "JointStateError"
+  MEASUREMENTS: ["X_LOCATION", "JOINT_STATE_ERROR"]
 
   ACTIONS:
     LEG_ACTION:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosAction"
       LEG_JOINT_DIMENSIONALITY: 8
-      DELTA_POS_LIMIT: 0.5
+      DELTA_POS_LIMIT: 0.1
   POSSIBLE_ACTIONS:
     - LEG_ACTION
 
