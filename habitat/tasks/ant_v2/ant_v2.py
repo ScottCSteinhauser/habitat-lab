@@ -78,6 +78,8 @@ class AntV2Sim(HabitatSim):
         self.prev_scene_id = None
         self.enable_physics = True
         self.robot = None
+        #used to measure root position delta for reward
+        self.prev_robot_pos = None
 
         # Number of physics updates per action
         #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
@@ -138,6 +140,7 @@ class AntV2Sim(HabitatSim):
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
+            self.prev_robot_pos = self.robot.base_pos
 
             # add floor
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
@@ -173,12 +176,16 @@ class AntV2Sim(HabitatSim):
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
+            self.prev_robot_pos = self.robot.base_pos
 
     def step(self, action):
         # what to do with action?
-        #print("     ... stepping")
-        # returns new observation after step
+
+        #cache the position before updating
+        self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
+
+        # returns new observation after step
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
@@ -215,12 +222,10 @@ class AntObservationSpaceSensor(Sensor):
         obs = self._sim.robot.observational_space
         return obs
 
+class VirtualMeasure(Measure):
+    """Implements some basic functionality to avoid duplication."""
 
-@registry.register_measure
-class XLocation(Measure):
-    """The measure calculates the x component of the robot's location."""
-
-    cls_uuid: str = "X_LOCATION"
+    cls_uuid: str = "VIRTUAL_MEASURE_DO_NOT_USE"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
@@ -235,6 +240,18 @@ class XLocation(Measure):
 
     def reset_metric(self, episode, *args: Any, **kwargs: Any):
         self._metric = None
+
+
+@registry.register_measure
+class XLocation(VirtualMeasure):
+    """The measure calculates the x component of the robot's location."""
+
+    cls_uuid: str = "X_LOCATION"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
@@ -244,10 +261,32 @@ class XLocation(Measure):
 
         current_position = self._sim.robot.base_pos
         self._metric = current_position.x
-        #print(self._metric)
 
 @registry.register_measure
-class JointStateError(Measure):
+class VectorRootDelta(VirtualMeasure):
+    """Measures the agent's root motion along a target vector."""
+
+    cls_uuid: str = "VECTOR_ROOT_DELTA"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        self.vector = np.array([1,0,0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None or self._sim.prev_robot_pos is None:
+            self._metric = None
+        #projected_vector = (displacement.dot(v) / norm(v)^2) * v
+        #v is unit, so magnitude reduces to displacement.dot(v)
+        displacement = self._sim.robot.base_pos - self.prev_robot_pos
+        self._metric = np.dot(displacement, self.vector)
+
+@registry.register_measure
+class JointStateError(VirtualMeasure):
     """The measure calculates the error between current and target joint states"""
 
     cls_uuid: str = "JOINT_STATE_ERROR"
@@ -255,18 +294,9 @@ class JointStateError(Measure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        self._sim = sim
-        self._config = config
-        self._metric = None
         #TODO: dynamic targets, for now just a standard pose
         self.target_state = np.ones(8)*0.5
-        super().__init__()
-
-    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
-        return self.cls_uuid
-
-    def reset_metric(self, episode, *args: Any, **kwargs: Any):
-        self._metric = None
+        super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
@@ -301,16 +331,10 @@ class LegRelPosAction(SimulatorTaskAction):
         delta_pos = np.clip(delta_pos, -1, 1)
         #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
-        #print(f"delta_pos = {delta_pos}")
-
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
-        #print(f"leg_joint_motor_pos = {self._sim.robot.leg_joint_pos}")
-        #print(f"leg_joint_positions = {self._sim.robot.leg_joint_state}")
-        #print(f"leg_joint_pos_limits = {self._sim.robot.joint_limits}")
         if should_step:
-            #print("action stepping")
             return self._sim.step(HabitatSimActions.LEG_VEL)
         return None
 
@@ -350,18 +374,6 @@ class AntV2Task(NavigationTask):
         super().__init__(config=config, sim=sim, dataset=dataset)
         # add custom sensor if eval mode is triggered, use below code to compute navmesh as well
         
-        """habitat_sim.gfx.Renderer()
-        navmesh_settings = habitat_sim.NavMeshSettings()
-        navmesh_settings.set_defaults()
-        sim.recompute_navmesh(sim.pathfinder, navmesh_settings, True)
-        print("NAVMESH COMPUTED?")"""
-
-        """if config.RUN_TYPE == "eval":
-            config.defrost()
-            config.SENSORS.append("THIRD_RGB_SENSOR")
-            config.DEBUG_RENDER = True
-            config.freeze()
-        print("TASK CONFIG:", config)"""
 
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)
