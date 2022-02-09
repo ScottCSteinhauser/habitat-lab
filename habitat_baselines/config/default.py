@@ -206,6 +206,26 @@ _C.PROFILING.NUM_STEPS_TO_CAPTURE = -1
 
 _C.register_renamed_key
 
+def split_opts_lists(opts:list):
+    r"""Merge list instances (e.g. SENSORS ['HEAD_RGB_SENSOR','DEPTH_SENSOR']) from the opts list for consumption by the config merger.
+
+    Args:
+        opts: Config options (keys, values) in a list (e.g., passed from
+        command line into the config.
+    """
+    #merge un-nested lists in opts
+    #NOTE: does not support nested lists, expects comma seperated values
+    modified_opts = []
+    for entry in opts:
+        if "[" in entry:
+            print(entry)
+            assert entry.endswith("]"), "No list end ']' found."
+            list_entries = entry.strip(",[]").split(",")
+            entry_list = [x for x in list_entries]
+            modified_opts.append(entry_list)
+        else:
+            modified_opts.append(entry)
+    return modified_opts
 
 def get_config(
     config_paths: Optional[Union[List[str], str]] = None,
@@ -239,7 +259,8 @@ def get_config(
 
     config.TASK_CONFIG = get_task_config(config.BASE_TASK_CONFIG_PATH)
     if opts:
-        config.CMD_TRAILING_OPTS = config.CMD_TRAILING_OPTS + opts
+        merged_opts = split_opts_lists(opts)
+        config.CMD_TRAILING_OPTS = config.CMD_TRAILING_OPTS + merged_opts
         config.merge_from_list(config.CMD_TRAILING_OPTS)
 
     if config.NUM_PROCESSES != -1:
