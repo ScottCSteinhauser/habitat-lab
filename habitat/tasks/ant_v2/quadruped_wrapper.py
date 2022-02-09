@@ -90,6 +90,11 @@ class QuadrupedRobot(RobotInterface):
             )
             self.joint_dof_indices[link_id] = self.sim_obj.get_link_dof_offset(link_id)
         self.joint_limits = self.sim_obj.joint_position_limits
+        print("Robot Info:")
+        print(f"self.joint_pos_indices = {self.joint_pos_indices}")
+        print(f"self.joint_limits = {self.joint_limits}")
+        print(f"self.params.hip_joints = {self.params.hip_joints}")
+        print(f"self.params.ankle_joints = {self.params.ankle_joints}")
 
         # remove any default damping motors
         for motor_id in self.sim_obj.existing_joint_motor_ids:
@@ -239,6 +244,11 @@ class QuadrupedRobot(RobotInterface):
     def leg_joint_state(self, ctrl: List[float]) -> None:
         """Set the current joint state for the legs"""
         self.sim_obj.joint_positions = ctrl
+
+    def random_pose(self):
+        """Compute a random pose within the joint limits."""
+        #NOTE: assume no un-limited joints 
+        return np.random.uniform(self.joint_limits[0], self.joint_limits[1])
 
     def _set_motor_pos(self, joint, ctrl):
         self.joint_motors[joint][1].position_target = ctrl
