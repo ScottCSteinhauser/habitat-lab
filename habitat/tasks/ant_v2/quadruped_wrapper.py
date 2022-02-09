@@ -133,27 +133,27 @@ class QuadrupedRobot(RobotInterface):
         agent_node = self._sim._default_agent.scene_node
         inv_T = agent_node.transformation.inverted()
 
-        for cam_prefix, sensor_names in self._cameras.items():
-            for sensor_name in sensor_names:
-                sens_obj = self._sim._sensors[sensor_name]._sensor_object
-                cam_info = self.params.cameras[cam_prefix]
+        # for cam_prefix, sensor_names in self._cameras.items():
+        #     for sensor_name in sensor_names:
+        #         sens_obj = self._sim._sensors[sensor_name]._sensor_object
+        #         cam_info = self.params.cameras[cam_prefix]
 
-                if cam_info.attached_link_id == -1:
-                    link_trans = self.sim_obj.transformation
-                else:
-                    link_trans = self.sim_obj.get_link_scene_node(
-                        self.params.ee_link
-                    ).transformation
+        #         if cam_info.attached_link_id == -1:
+        #             link_trans = self.sim_obj.transformation
+        #         else:
+        #             link_trans = self.sim_obj.get_link_scene_node(
+        #                 self.params.ee_link
+        #             ).transformation
 
-                cam_transform = mn.Matrix4.look_at(
-                    cam_info.cam_offset_pos,
-                    cam_info.cam_look_at_pos,
-                    mn.Vector3(0, 1, 0),
-                )
-                cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
-                cam_transform = inv_T @ cam_transform
+        #         cam_transform = mn.Matrix4.look_at(
+        #             cam_info.cam_offset_pos,
+        #             cam_info.cam_look_at_pos,
+        #             mn.Vector3(0, 1, 0),
+        #         )
+        #         cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
+        #         cam_transform = inv_T @ cam_transform
 
-                sens_obj.node.transformation = cam_transform
+        #         sens_obj.node.transformation = cam_transform
 
         # Guard against out of limit joints
         # TODO: should auto clamping be enabled instead? How often should we clamp?
@@ -216,8 +216,8 @@ class QuadrupedRobot(RobotInterface):
         """Get the current target of both the hip and ankle joints motors."""
         motor_targets = np.zeros(len(self.params.hip_init_params) + len(self.params.ankle_init_params))
         for i, jidx in enumerate(self.params.hip_joints + self.params.ankle_joints) :
-            motor_targets[i] = self._get_motor_pos(jidx)
-        
+            jp_ix = self.joint_pos_indices[jidx]
+            motor_targets[jp_ix] = self._get_motor_pos(jidx)
         return motor_targets
 
     @leg_joint_pos.setter
@@ -227,7 +227,8 @@ class QuadrupedRobot(RobotInterface):
             raise ValueError("Control dimension does not match joint dimension")
 
         for i, jidx in enumerate(self.params.hip_joints + self.params.ankle_joints):
-            self._set_motor_pos(jidx, ctrl[i])
+            jp_ix = self.joint_pos_indices[jidx]
+            self._set_motor_pos(jidx, ctrl[jp_ix])
 
     @property
     def leg_joint_state(self) -> np.ndarray:

@@ -30,9 +30,19 @@ def ant_environment_example():
     with habitat.Env(config=config) as env:
         env.reset()
         while not env.episode_over:
+            print(env._sim.robot.sim_obj.joint_positions)
+
+            #sample random action for testing:
             action = env.action_space.sample()
-            for i in range(2):
-                action = env.action_space.sample()
+            #override actions for testing:
+            #action['action_args']['leg_action'] = np.ones(8)*-1
+            #action['action_args']['leg_action'] = np.zeros(8)
+
+            if env._elapsed_steps == 120:
+                env._sim.robot.reset()
+
+            #for i in range(2):
+            #    action = env.action_space.sample()
             obs = env.step(action)
             observations.append(obs)
             #keystroke = cv2.waitKey(0)
@@ -49,6 +59,7 @@ def ant_environment_example():
         "color",
         "test_ant_wrapper",
         open_vid=True,
+        fps=30,
     )
 
 def main():
