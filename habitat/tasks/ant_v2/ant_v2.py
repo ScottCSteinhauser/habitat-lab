@@ -145,12 +145,11 @@ class AntV2Sim(HabitatSim):
             # add floor
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
             floor = obj_templates_mgr.get_template_by_handle(cube_handle)
-            floor.scale = np.array([20.0, 0.05, 20.0])
+            #should be thicker than 0.08 for better collision margin stability
+            floor.scale = np.array([20.0, 0.1, 20.0])
 
             obj_templates_mgr.register_template(floor, "floor")
             floor_obj = rigid_obj_mgr.add_object_by_template_handle("floor")
-            floor_obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
-
             floor_obj.translation = np.array([2.50, -1, 0.5])
             floor_obj.motion_type = habitat_sim.physics.MotionType.STATIC
             
