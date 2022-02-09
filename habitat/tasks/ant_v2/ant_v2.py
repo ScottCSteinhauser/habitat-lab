@@ -281,7 +281,7 @@ class VectorRootDelta(VirtualMeasure):
             self._metric = None
         #projected_vector = (displacement.dot(v) / norm(v)^2) * v
         #v is unit, so magnitude reduces to displacement.dot(v)
-        displacement = self._sim.robot.base_pos - self.prev_robot_pos
+        displacement = self._sim.robot.base_pos - self._sim.prev_robot_pos
         self._metric = np.dot(displacement, self.vector)
 
 @registry.register_measure
@@ -334,10 +334,7 @@ class CompositeAntReward(VirtualMeasure):
     def reset_metric(self, *args, episode, task, observations, **kwargs):
         task.measurements.check_measure_dependencies(
             self.uuid,
-            [
-                VectorRootDelta.cls_uuid,
-                JointStateError.cls_uuid,
-            ],
+            self.measure_dependencies,
         )
 
         self.update_metric(
@@ -355,7 +352,11 @@ class CompositeAntReward(VirtualMeasure):
         #weight and combine reward terms
         for measure_uuid,weight in self.active_measure_weights.items():
             measure = task.measurements.measures[measure_uuid]
-            reward += measure.get_metric()*weight
+            if measure.get_metric():
+                reward += measure.get_metric()*weight
+            #debugging: measure metrics will be None upon init
+            #else:
+            #    print(f"warning, {measure_uuid} is None")
 
         self._metric = reward
 
