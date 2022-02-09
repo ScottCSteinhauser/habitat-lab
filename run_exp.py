@@ -25,10 +25,20 @@ experiments: Dict[str, Dict[str,str]] = {
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": "",
     },
+    "delta_x_loc_ant": {
+        "description": "Reward delta root progress in X direction.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA",
+    },
     "joint_error_ant":{
         "description": "Linear penalty for target joint angle error.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR",
+    },
+    "joint_err_+_deltax_ant":{
+        "description": "Composite reward term = JointError+10*XLocation",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
     }
 }
 

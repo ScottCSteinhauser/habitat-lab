@@ -293,8 +293,8 @@ class JointStateError(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        #TODO: dynamic targets, for now just a standard pose
-        self.target_state = np.ones(8)*0.5
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -308,6 +308,56 @@ class JointStateError(VirtualMeasure):
         self._metric = -np.linalg.norm(np.abs(current_state - self.target_state))
         #print(self._metric)
 
+@registry.register_measure
+class CompositeAntReward(VirtualMeasure):
+    """The measure calculates the error between current and target joint states"""
+
+    cls_uuid: str = "COMPOSITE_ANT_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #add all potential dependencies here:
+        self.measure_dependencies=[
+            VectorRootDelta.cls_uuid,
+            JointStateError.cls_uuid,
+        ]
+
+        #NOTE: define active rewards and weights here:
+        self.active_measure_weights = {
+            VectorRootDelta.cls_uuid: 10.0,
+            JointStateError.cls_uuid: 1.0,
+        }
+        
+        super().__init__(sim, config, args)
+
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        task.measurements.check_measure_dependencies(
+            self.uuid,
+            [
+                VectorRootDelta.cls_uuid,
+                JointStateError.cls_uuid,
+            ],
+        )
+
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs
+        )
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        reward = 0
+        #weight and combine reward terms
+        for measure_uuid,weight in self.active_measure_weights.items():
+            measure = task.measurements.measures[measure_uuid]
+            reward += measure.get_metric()*weight
+
+        self._metric = reward
 
 @registry.register_task_action
 class LegRelPosAction(SimulatorTaskAction):
