@@ -23,7 +23,7 @@ experiments: Dict[str, Dict[str,str]] = {
     "x_loc_ant": {
         "description": "Reward cumulative progress in X direction.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
-        "overrides": "",
+        "overrides": " RL.REWARD_MEASURE X_LOCATION",
     },
     "delta_x_loc_ant": {
         "description": "Reward delta root progress in X direction.",
@@ -36,7 +36,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR",
     },
     "joint_err_+_deltax_ant":{
-        "description": "Composite reward term = JointError+10*XLocation",
+        "description": "Composite reward term.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
     }

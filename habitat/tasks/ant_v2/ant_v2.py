@@ -471,12 +471,5 @@ class AntV2Task(NavigationTask):
     ) -> None:
         super().__init__(config=config, sim=sim, dataset=dataset)
         
-        # left off trying to get action so I can compute magnitude and use this as a metric.
-    """def step(self, action: Dict[str, Any], episode: Episode):
-        super().step(action=action, episode=episode)
-        print(action)
-        #self._sim.most_recent_action = action
-        print(self._sim.most_recent_action)"""
-        
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)
