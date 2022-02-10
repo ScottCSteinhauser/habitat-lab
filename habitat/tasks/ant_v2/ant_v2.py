@@ -307,6 +307,29 @@ class JointStateError(VirtualMeasure):
         #print(self._metric)
 
 @registry.register_measure
+class JointStateMaxError(VirtualMeasure):
+    """The measure calculates the max error between current and target joint states"""
+
+    cls_uuid: str = "JOINT_STATE_MAX_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+
+        current_state = self._sim.robot.leg_joint_state
+        
+        self._metric = -np.max(np.abs(current_state - self.target_state))
+
+@registry.register_measure
 class ActiveContacts(VirtualMeasure):
     # TODO: Set this such that only contact points made by the ant are considered.
     # Inspired by MuJoCo's ant-v2 reward structure
@@ -330,7 +353,6 @@ class ActiveContacts(VirtualMeasure):
 
 @registry.register_measure
 class ActionCost(VirtualMeasure):
-    # TODO: Set this such that only contact points made by the ant are considered.
     # Inspired by MuJoCo's ant-v2 reward structure
     """Actions which have greater magnitudes are more costly."""
 
@@ -346,8 +368,9 @@ class ActionCost(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-        
-        self._metric = np.sum(np.square(self._sim.most_recent_action))
+        #magnitude of the action vector rather than sum of squares.
+        self._metric = -np.linalg.norm(self._sim.most_recent_action)
+        #self._metric = -np.sum(np.square(self._sim.most_recent_action))
         #print(self._metric)
 
 @registry.register_measure
