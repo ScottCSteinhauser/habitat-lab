@@ -60,17 +60,7 @@ def execute_exp(config: Config, run_type: str) -> None:
     config.defrost()
     config.TASK_CONFIG.TASK.RUN_TYPE = run_type
     config.freeze()
-    print(config)
-    print("RUN TYPE: ", config.TASK_CONFIG.TASK.RUN_TYPE)
-    
-    """if config.TASK_CONFIG.TASK.RUN_TYPE == "eval":
-            config.TASK_CONFIG.TASK.defrost()
-            config.TASK_CONFIG.TASK.THIRD_RGB_SENSOR.WIDTH = 512
-            config.TASK_CONFIG.TASK.THIRD_RGB_SENSOR.HEIGHT = 512
-            config.TASK_CONFIG.TASK.SENSORS.append("THIRD_RGB_SENSOR")
-            # config.DEBUG_RENDER = True
-            config.TASK_CONFIG.TASK.freeze()"""
-    
+
     if run_type == "train":
         trainer.train()
     elif run_type == "eval":

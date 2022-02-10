@@ -11,17 +11,17 @@ TORCH_GPU_ID: 0
 # Can be uncommented to generate videos.
 #VIDEO_OPTION: ["disk", "tensorboard"]
 VIDEO_OPTION: ["disk"]
-TENSORBOARD_DIR: "tb"
+TENSORBOARD_DIR: "data/tb/default/"
 VIDEO_DIR: "video_dir"
 # Evaluate on all episodes
 TEST_EPISODE_COUNT: -1
-EVAL_CKPT_PATH_DIR: "data/new_checkpoints_video_enabled_2"
+EVAL_CKPT_PATH_DIR: "data/checkpoints/default/"
 NUM_ENVIRONMENTS: 1
 #use the empty sensor list for training
 #SENSORS: []
 #include the "third_sensor" for eval
 SENSORS: ['THIRD_SENSOR']
-CHECKPOINT_FOLDER: "data/new_checkpoints_video_enabled_2"
+CHECKPOINT_FOLDER: "data/checkpoints/default/"
 #TOTAL_NUM_STEPS: 75e6
 LOG_INTERVAL: 20
 NUM_CHECKPOINTS: 100
@@ -37,8 +37,8 @@ RL:
   POLICY:
       name: "PointNavResNetPolicy"
       action_distribution_type: "gaussian"
-  REWARD_MEASURE: "X_LOCATION"
-  SUCCESS_MEASURE: "X_LOCATION"
+  REWARD_MEASURE: "COMPOSITE_ANT_REWARD"
+  SUCCESS_MEASURE: "COMPOSITE_ANT_REWARD"
   # GYM_OBS_KEYS: []
   PPO:
     # ppo params

@@ -44,34 +44,7 @@ class AntV2DatasetV0(Dataset):
         r"""Return list of scene ids for which dataset has separate files with
         episodes.
         """
-        print("CONFIG:::")
 
-        print(config)
-        print("CONFIG:::")
-        """assert cls.check_config_paths_exist(config)
-        dataset_dir = os.path.dirname(
-            config.DATA_PATH.format(split=config.SPLIT)
-        )
-
-        cfg = config.clone()
-        cfg.defrost()
-        cfg.CONTENT_SCENES = []
-        dataset = cls(cfg)
-        has_individual_scene_files = os.path.exists(
-            dataset.content_scenes_path.split("{scene}")[0].format(
-                data_path=dataset_dir
-            )
-        )
-        if has_individual_scene_files:
-            return cls._get_scenes_from_folder(
-                content_scenes_path=dataset.content_scenes_path,
-                dataset_dir=dataset_dir,
-            )
-        else:
-            # Load the full dataset, things are not split into separate files
-            cfg.CONTENT_SCENES = [ALL_SCENES_MASK]
-            dataset = cls(cfg)
-            return list(map(cls.scene_from_scene_path, dataset.scene_ids))"""
         cfg = config.clone()
         cfg.defrost()
         cfg.CONTENT_SCENES = ["NONE"]
