@@ -6,7 +6,7 @@
 
 import math
 from collections import defaultdict
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Dict
 
 import attr
 import numpy as np
@@ -80,6 +80,9 @@ class AntV2Sim(HabitatSim):
         self.robot = None
         #used to measure root position delta for reward
         self.prev_robot_pos = None
+        
+        #used to give reward for magnitude of action
+        self.most_recent_action = None
 
         # Number of physics updates per action
         #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
@@ -178,8 +181,6 @@ class AntV2Sim(HabitatSim):
             self.prev_robot_pos = self.robot.base_pos
 
     def step(self, action):
-        # what to do with action?
-
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
@@ -188,9 +189,6 @@ class AntV2Sim(HabitatSim):
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
-
-    # Need to figure out MVP for the simulator + how to set up a camera which isn't part of the obs space.
-    # Also need to figure out how to define rewards based on measurements/observations
 
 
 @registry.register_sensor
@@ -309,6 +307,50 @@ class JointStateError(VirtualMeasure):
         #print(self._metric)
 
 @registry.register_measure
+class ActiveContacts(VirtualMeasure):
+    # TODO: Set this such that only contact points made by the ant are considered.
+    # Inspired by MuJoCo's ant-v2 reward structure
+    """The measure calculates the number of active contact points in the environment"""
+
+    cls_uuid: str = "ACTIVE_CONTACTS"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        
+        self._metric = self._sim.get_physics_num_active_contact_points()
+        #print(self._metric)
+
+@registry.register_measure
+class ActionCost(VirtualMeasure):
+    # TODO: Set this such that only contact points made by the ant are considered.
+    # Inspired by MuJoCo's ant-v2 reward structure
+    """Actions which have greater magnitudes are more costly."""
+
+    cls_uuid: str = "ACTION_COST"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        
+        self._metric = np.sum(np.square(self._sim.most_recent_action))
+        #print(self._metric)
+
+@registry.register_measure
 class CompositeAntReward(VirtualMeasure):
     """The measure calculates the error between current and target joint states"""
 
@@ -320,13 +362,17 @@ class CompositeAntReward(VirtualMeasure):
         #add all potential dependencies here:
         self.measure_dependencies=[
             VectorRootDelta.cls_uuid,
-            JointStateError.cls_uuid,
+            # JointStateError.cls_uuid,
+            ActiveContacts.cls_uuid,
+            ActionCost.cls_uuid,
         ]
 
         #NOTE: define active rewards and weights here:
         self.active_measure_weights = {
             VectorRootDelta.cls_uuid: 10.0,
-            JointStateError.cls_uuid: 1.0,
+            # JointStateError.cls_uuid: 1.0,
+            ActiveContacts.cls_uuid: -0.05,
+            ActionCost.cls_uuid: -0.5,
         }
         
         super().__init__(sim, config, args)
@@ -386,6 +432,9 @@ class LegRelPosAction(SimulatorTaskAction):
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        # record the action for use in the ActionCost measure
+        self._sim.most_recent_action = delta_pos
         return None
 
 
@@ -420,10 +469,14 @@ class AntV2Task(NavigationTask):
     def __init__(
         self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None
     ) -> None:
-        # config.enable_physics = True
         super().__init__(config=config, sim=sim, dataset=dataset)
-        # add custom sensor if eval mode is triggered, use below code to compute navmesh as well
         
-
+        # left off trying to get action so I can compute magnitude and use this as a metric.
+    """def step(self, action: Dict[str, Any], episode: Episode):
+        super().step(action=action, episode=episode)
+        print(action)
+        #self._sim.most_recent_action = action
+        print(self._sim.most_recent_action)"""
+        
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)

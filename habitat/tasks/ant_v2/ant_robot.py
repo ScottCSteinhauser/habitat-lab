@@ -110,8 +110,6 @@ class AntV2Robot(QuadrupedRobot):
         # ant joint position states (where am I now?)
         obs_space[29:37] = super().leg_joint_state
 
-        #obs_space[27:30] = super().base_pos
-        #return np.zeros(29)
         return obs_space
 
     def update(self):

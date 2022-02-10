@@ -54,7 +54,7 @@ def ant_environment_example():
         env.reset()
         while not env.episode_over:
             print(env._sim.robot.sim_obj.joint_positions)
-
+            
             #sample random action for testing:
             action = env.action_space.sample()
             #override actions for testing:
