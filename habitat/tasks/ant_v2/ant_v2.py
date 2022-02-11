@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-from collections import defaultdict
-from typing import Any, List, Optional, Tuple, Dict
+from collections import defaultdict, OrderedDict
+from typing import Any, List, Optional, Tuple, Dict, Union
 
 import attr
 import numpy as np
@@ -56,6 +56,7 @@ except ImportError:
 
 # import quadruped_wrapper
 from habitat.tasks.ant_v2.ant_robot import AntV2Robot
+from habitat.tasks.ant_v2.ant_v2_sim_debug_utils import AntV2SimDebugVisualizer
 
 
 def merge_sim_episode_with_object_config(sim_config, episode):
@@ -105,6 +106,9 @@ class AntV2Sim(HabitatSim):
         self.concur_render = self.habitat_config.get(
             "CONCUR_RENDER", True
         ) and hasattr(self, "get_sensor_observations_async_start")
+        #print(f"self.concur_render = {self.concur_render}")
+
+        self.debug_visualizer = AntV2SimDebugVisualizer(self)
 
     def _try_acquire_context(self):
         # Is this relevant?
@@ -117,6 +121,11 @@ class AntV2Sim(HabitatSim):
 
         config["SCENE"] = ep_info["scene_id"]
         super().reconfigure(config)
+
+        #add eval/debug visualizations if in eval mode
+        self.is_eval = "THIRD_SENSOR" in self.habitat_config.AGENT_0.SENSORS
+        self.robot_root_path = []
+        print(f"self.is_eval = {self.is_eval}")
 
         self.ep_info = ep_info
 
@@ -185,11 +194,20 @@ class AntV2Sim(HabitatSim):
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
 
+        if self.is_eval:
+            self.robot_root_path.append(self.robot.base_pos)
+
         # returns new observation after step
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
 
+    def debug_draw(self):
+        if self.is_eval:
+            #draw some debug line visualizations
+            self.debug_visualizer.draw_axis()
+            if len(self.robot_root_path) > 1:
+                self.debug_visualizer.draw_path(self.robot_root_path)
 
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
