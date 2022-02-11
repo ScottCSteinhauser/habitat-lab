@@ -410,9 +410,9 @@ class CompositeAntReward(VirtualMeasure):
 
         #NOTE: define active rewards and weights here:
         self.active_measure_weights = {
-            VectorRootDelta.cls_uuid: 10.0,
-            # JointStateError.cls_uuid: 1.0,
-            ActiveContacts.cls_uuid: -0.05,
+            VectorRootDelta.cls_uuid: 1000.0,
+            JointStateError.cls_uuid: 0.1,
+            #ActiveContacts.cls_uuid: -0.05,
             ActionCost.cls_uuid: 0.5,
         }
         

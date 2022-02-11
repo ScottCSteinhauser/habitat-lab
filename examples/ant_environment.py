@@ -60,9 +60,11 @@ def ant_environment_example():
             #override actions for testing:
             #action['action_args']['leg_action'] = np.ones(8)*-1
             #action['action_args']['leg_action'] = np.zeros(8)
-            joint_target = np.ones(8)*0.5
-            joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
-            joint_target = env._sim.robot.random_pose()
+            
+            #joint_target = np.ones(8)*0.5
+            #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+            #joint_target = env._sim.robot.random_pose()
+            joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
             #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0))
             action['action_args']['leg_action'] = joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
 
@@ -73,7 +75,7 @@ def ant_environment_example():
             #keystroke = cv2.waitKey(0)
 
             #NOTE: you can check metrics here:
-            #measure_query = "ACTION_COST"
+            #measure_query = "VECTOR_ROOT_DELTA"
             #print(f"{measure_query} = {env.task.measurements.measures[measure_query].get_metric()}")
 
             #if keystroke == 27:
