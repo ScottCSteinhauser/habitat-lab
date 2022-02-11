@@ -51,8 +51,8 @@ RL:
     lr: 3e-5
     eps: 1e-5
     max_grad_norm: 0.2
-    num_steps: 128 # 16384
-    hidden_size: 256
+    num_steps: 300 # accounting for num_environments=16, 300*16 steps per update, 300*4 steps per mini-batch
+    hidden_size: 512
     use_gae: True
     gamma: 0.99
     tau: 0.95
