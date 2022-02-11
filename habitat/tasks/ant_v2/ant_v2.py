@@ -125,7 +125,7 @@ class AntV2Sim(HabitatSim):
         #add eval/debug visualizations if in eval mode
         self.is_eval = "THIRD_SENSOR" in self.habitat_config.AGENT_0.SENSORS
         self.robot_root_path = []
-        print(f"self.is_eval = {self.is_eval}")
+        #print(f"self.is_eval = {self.is_eval}")
 
         self.ep_info = ep_info
 
