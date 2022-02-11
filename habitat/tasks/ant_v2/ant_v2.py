@@ -413,7 +413,7 @@ class CompositeAntReward(VirtualMeasure):
             VectorRootDelta.cls_uuid: 10.0,
             # JointStateError.cls_uuid: 1.0,
             ActiveContacts.cls_uuid: -0.05,
-            ActionCost.cls_uuid: -0.5,
+            ActionCost.cls_uuid: 0.5,
         }
         
         super().__init__(sim, config, args)
