@@ -49,6 +49,7 @@ class AntV2Robot(QuadrupedRobot):
                 "torso",
             },
         )
+        self.physics_manager = sim.get_rigid_object_manager()
         super().__init__(ant_params, urdf_path, sim, limit_robo_joints, fixed_base)
 
 
@@ -79,9 +80,20 @@ class AntV2Robot(QuadrupedRobot):
         3-dim directional velocity and 3-dim angular velocity -> 3+3=6
         8 Joint velocity -> 8
         8 Joint positions -> 8
+        3 directional forces for each link -> 3 * 9 = 27
         """
         # May expand to make use of external forces in the future (once this is exposed in habitat_sim & if joint torques are used in the future)
-        obs_space = np.zeros(37)
+        obs_space = np.zeros(24)
+        
+        # ant joint motor targets (where do I want to be?) (Radians)
+        obs_space[0:8] = super().leg_joint_pos
+        # ant joint velocity
+        obs_space[8:16] = super().joint_velocities
+        # joint goals
+        obs_space[16:24] = [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
+        return obs_space
+        
+        
         pos = super().base_pos
         obs_space[0] = pos[0]
         obs_space[1] = pos[1]
@@ -110,6 +122,10 @@ class AntV2Robot(QuadrupedRobot):
         # ant joint position states (where am I now?)
         obs_space[29:37] = super().leg_joint_state
 
+        
+        #TODO add contact point info!
+        self._sim.get_physics_contact_points()
+        
         return obs_space
 
     def update(self):

@@ -193,7 +193,9 @@ class AntV2Sim(HabitatSim):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
-
+        self.robot.base_pos = mn.Vector3(
+                self.habitat_config.AGENT_0.START_POSITION
+            )
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -225,7 +227,7 @@ class AntObservationSpaceSensor(Sensor):
 
     def _get_observation_space(self, *args: Any, **kwargs: Any):
         return spaces.Box(
-            low=-np.inf, high=np.inf, shape=(37,), dtype=np.float
+            low=-np.inf, high=np.inf, shape=(24,), dtype=np.float
         )
 
     def _get_sensor_type(self, *args: Any, **kwargs: Any):
@@ -365,8 +367,12 @@ class ActiveContacts(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-        
-        self._metric = self._sim.get_physics_num_active_contact_points()
+        contact_points = self._sim.get_physics_contact_points()
+        total_force = 0
+        for contact in contact_points:
+            total_force += contact.normal_force
+                
+        self._metric = total_force
         #print(self._metric)
 
 @registry.register_measure
@@ -403,16 +409,16 @@ class CompositeAntReward(VirtualMeasure):
         #add all potential dependencies here:
         self.measure_dependencies=[
             VectorRootDelta.cls_uuid,
-            # JointStateError.cls_uuid,
+            JointStateError.cls_uuid,
             ActiveContacts.cls_uuid,
             ActionCost.cls_uuid,
         ]
 
         #NOTE: define active rewards and weights here:
         self.active_measure_weights = {
-            VectorRootDelta.cls_uuid: 1000.0,
+            #VectorRootDelta.cls_uuid: 1000.0,
             JointStateError.cls_uuid: 0.1,
-            #ActiveContacts.cls_uuid: -0.05,
+            #ActiveContacts.cls_uuid: -0.005,
             ActionCost.cls_uuid: 0.5,
         }
         

@@ -44,7 +44,12 @@ experiments: Dict[str, Dict[str,str]] = {
         "description": "Composite reward term.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
-    }
+    },
+    "composite_joint_regression_action_cost":{
+        "description": "Composite reward term.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
+    },
 }
 
 
