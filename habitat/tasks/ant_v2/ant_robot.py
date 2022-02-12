@@ -69,48 +69,5 @@ class AntV2Robot(QuadrupedRobot):
         add_rot = mn.Matrix4.rotation(mn.Rad(-np.pi / 2), mn.Vector3(1.0, 0, 0))
         return self.sim_obj.transformation @ add_rot
 
-    @property
-    def observational_space(self) -> np.ndarray:
-        """
-        37 dim obs space
-        pos of the Torso -> 3
-        orientation (quaternion x,y,z,w) of the Torso -> 4
-        8 Joint motor targets -> 8
-        3-dim directional velocity and 3-dim angular velocity -> 3+3=6
-        8 Joint velocity -> 8
-        8 Joint positions -> 8
-        """
-        # May expand to make use of external forces in the future (once this is exposed in habitat_sim & if joint torques are used in the future)
-        obs_space = np.zeros(37)
-        pos = super().base_pos
-        obs_space[0] = pos[0]
-        obs_space[1] = pos[1]
-        obs_space[2] = pos[2]
-
-
-        # ant orientation
-        orientation = super().base_rot
-        obs_space[3] = orientation.vector.x
-        obs_space[4] = orientation.vector.y
-        obs_space[5] = orientation.vector.z
-        obs_space[6] = orientation.scalar
-
-        # ant joint motor targets (where do I want to be?) (Radians)
-        obs_space[7:15] = super().leg_joint_pos
-
-        # ant directional velocity
-        obs_space[15:18] = super().base_velocity
-
-        # ant angular velocity
-        obs_space[18:21] = super().base_angular_velocity
-
-        # ant joint velocity
-        obs_space[21:29] = super().joint_velocities
-
-        # ant joint position states (where am I now?)
-        obs_space[29:37] = super().leg_joint_state
-
-        return obs_space
-
     def update(self):
         super().update()
