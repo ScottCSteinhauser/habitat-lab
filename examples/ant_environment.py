@@ -74,6 +74,8 @@ def ant_environment_example():
             observations.append(obs)
             #keystroke = cv2.waitKey(0)
 
+            #print(f"observational_space = {env._sim.observational_space}")
+
             #NOTE: you can check metrics here:
             #measure_query = "VECTOR_ROOT_DELTA"
             #print(f"{measure_query} = {env.task.measurements.measures[measure_query].get_metric()}")

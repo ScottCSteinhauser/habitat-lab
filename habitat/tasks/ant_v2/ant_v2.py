@@ -211,6 +211,51 @@ class AntV2Sim(HabitatSim):
             if len(self.robot_root_path) > 1:
                 self.debug_visualizer.draw_path(self.robot_root_path)
 
+    @property
+    def observational_space_size(self) -> int:
+        """Return the size of your observational space.
+        Maybe there is a better way than to make you do this manually?"""
+        return 45
+
+    @property
+    def observational_space(self) -> np.ndarray:
+        """
+        The observation feature for the robot.
+        Comment-out or add whatever here.
+        """
+
+        obs_terms = []
+
+        # base position (3D)
+        obs_terms.extend([x for x in self.robot.base_pos])
+
+        # base orientation (4D) - quaternion
+        obs_terms.extend([x for x in list(self.robot.base_rot.vector)])
+        obs_terms.extend([self.robot.base_rot.scalar])
+
+        # base linear velocity (3D)
+        obs_terms.extend([x for x in list(self.robot.base_velocity)])
+
+        # base angular velocity (3D)
+        obs_terms.extend([x for x in list(self.robot.base_angular_velocity)])
+
+        # ant joint velocity (8D)
+        obs_terms.extend([x for x in list(self.robot.joint_velocities)])
+
+        # ant joint position states (8D) (where am I now?)
+        # NOTE: this is the state used in joint based rewards
+        obs_terms.extend([x for x in list(self.robot.leg_joint_state)])
+
+        # ant joint motor targets (8D) (where do I want to be?) (Radians)
+        # NOTE: this is the state modified by the action
+        obs_terms.extend([x for x in list(self.robot.leg_joint_pos)])
+
+        # joint state rest position target (8D) (for joint error reward)
+        obs_terms.extend([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+
+        obs_space = np.array(obs_terms)
+        return obs_space
+
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
 
@@ -227,7 +272,7 @@ class AntObservationSpaceSensor(Sensor):
 
     def _get_observation_space(self, *args: Any, **kwargs: Any):
         return spaces.Box(
-            low=-np.inf, high=np.inf, shape=(24,), dtype=np.float
+            low=-np.inf, high=np.inf, shape=(self._sim.observational_space_size,), dtype=np.float
         )
 
     def _get_sensor_type(self, *args: Any, **kwargs: Any):
@@ -236,7 +281,7 @@ class AntObservationSpaceSensor(Sensor):
     def get_observation(
         self, observations, episode, *args: Any, **kwargs: Any
     ):
-        obs = self._sim.robot.observational_space
+        obs = self._sim.observational_space
         return obs
 
 class VirtualMeasure(Measure):
@@ -323,7 +368,7 @@ class JointStateError(VirtualMeasure):
 
         current_state = self._sim.robot.leg_joint_state
         
-        self._metric = -np.linalg.norm(np.abs(current_state - self.target_state))
+        self._metric = -np.linalg.norm(current_state - self.target_state)
         #print(self._metric)
 
 @registry.register_measure
