@@ -569,9 +569,11 @@ class LegRelPosActionSymmetrical(SimulatorTaskAction):
         # take the 4 dimensions and apply them to both sides of the ant
         delta_pos = []
         delta_pos.extend(action[0:2])
-        delta_pos.extend(action[0:2] * -1.0)
+        delta_pos.extend(action[0:2])
+        delta_pos[-2] *= -1
         delta_pos.extend(action[2:4])
-        delta_pos.extend(action[2:4] * -1.0)
+        delta_pos.extend(action[2:4])
+        delta_pos[-2] *= -1
         
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
