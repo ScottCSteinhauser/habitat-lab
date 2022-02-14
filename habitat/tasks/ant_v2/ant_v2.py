@@ -79,6 +79,9 @@ class AntV2Sim(HabitatSim):
         self.prev_scene_id = None
         self.enable_physics = True
         self.robot = None
+        
+        # The direction we want the ant to progress in.
+        self.target_vector = np.array([1,0,0])
         #used to measure root position delta for reward
         self.prev_robot_pos = None
         
@@ -193,9 +196,9 @@ class AntV2Sim(HabitatSim):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
-        self.robot.base_pos = mn.Vector3(
+        """self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
-            )
+            )"""
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -210,6 +213,14 @@ class AntV2Sim(HabitatSim):
             self.debug_visualizer.draw_axis()
             if len(self.robot_root_path) > 1:
                 self.debug_visualizer.draw_path(self.robot_root_path)
+            
+            #TODO: draw ant's egocentric vector
+            #Unsure how to multiple vectors here
+            #print(self.robot.base_transformation.__mul__(mn.Vector4(np.array([1,1,1,1]))))
+            #egocentric_vector = self.robot.base_transformation.inverted() * mn.Vector4(mn.Vector3(self.target_vector), 1)
+            #print(self.robot.base_transformation.inverted)
+            #t = mn.Vector3(self.robot.base_pos) + egocentric_vector
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), mn.Vector3(self.robot.base_pos) + self.robot.base_transformation.up)
 
     @property
     def observational_space_size(self) -> int:
@@ -228,6 +239,9 @@ class AntV2Sim(HabitatSim):
 
         # base position (3D)
         obs_terms.extend([x for x in self.robot.base_pos])
+
+        #NEW ego centric x-direction vector
+        
 
         # base orientation (4D) - quaternion
         obs_terms.extend([x for x in list(self.robot.base_rot.vector)])
@@ -334,7 +348,7 @@ class VectorRootDelta(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.vector = np.array([1,0,0])
+        self.vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
