@@ -42,9 +42,9 @@ class AntV2SimDebugVisualizer():
 
     def draw_axis(self):
         """Draw global XYZ as RGB debug lines."""
-        self.dlr.draw_transformed_line(origin, unit_x, red)
-        self.dlr.draw_transformed_line(origin, unit_y, green)
-        self.dlr.draw_transformed_line(origin, unit_z, blue)
+        self.dlr.draw_transformed_line(mn.Vector3(), unit_x, red)
+        self.dlr.draw_transformed_line(mn.Vector3(), unit_y, green)
+        self.dlr.draw_transformed_line(mn.Vector3(), unit_z, blue)
 
     def lerp_color(self, c1, c2, t):
         """Return the interpolated color at t in range [0,1]."""
@@ -52,7 +52,8 @@ class AntV2SimDebugVisualizer():
 
     def draw_vector(self, position, direction):
         """Draw a given vector at some position."""
-        self.dlr.draw_transformed_line(position, direction, blue)
+        #NOTE: this is line between two points, so 2nd entry should be a point
+        self.dlr.draw_transformed_line(position, position+direction, blue)
 
     def draw_path(self, points, c1=blue, c2=red):
         """Draw a path of points with a blue->red color gradient."""

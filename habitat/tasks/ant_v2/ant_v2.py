@@ -196,9 +196,6 @@ class AntV2Sim(HabitatSim):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
-        """self.robot.base_pos = mn.Vector3(
-                self.habitat_config.AGENT_0.START_POSITION
-            )"""
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -220,7 +217,7 @@ class AntV2Sim(HabitatSim):
             #egocentric_vector = self.robot.base_transformation.inverted() * mn.Vector4(mn.Vector3(self.target_vector), 1)
             #print(self.robot.base_transformation.inverted)
             #t = mn.Vector3(self.robot.base_pos) + egocentric_vector
-            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), mn.Vector3(self.robot.base_pos) + self.robot.base_transformation.up)
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), self.robot.base_transformation.up)
 
     @property
     def observational_space_size(self) -> int:
@@ -240,7 +237,7 @@ class AntV2Sim(HabitatSim):
         # base position (3D)
         obs_terms.extend([x for x in self.robot.base_pos])
 
-        #NEW ego centric x-direction vector
+        #TODO: NEW ego centric x-direction vector
         
 
         # base orientation (4D) - quaternion
