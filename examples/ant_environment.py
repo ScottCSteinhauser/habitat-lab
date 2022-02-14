@@ -64,12 +64,12 @@ def ant_environment_example():
             #joint_target = np.ones(8)*0.5
             #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
             #joint_target = env._sim.robot.random_pose()
-            joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
+            #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
             #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0))
-            action['action_args']['leg_action'] = joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
+            #action['action_args']['leg_action'] = joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
 
             #for i in range(2):
-            #    action = env.action_space.sample()
+            action = env.action_space.sample()
             obs = env.step(action)
             observations.append(obs)
             #keystroke = cv2.waitKey(0)

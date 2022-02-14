@@ -25,7 +25,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE X_LOCATION",
     },
-    "delta_x_loc_ant": {
+    "delta_x_loc_ant_symmetry_enforced": {
         "description": "Reward delta root progress in X direction.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA",

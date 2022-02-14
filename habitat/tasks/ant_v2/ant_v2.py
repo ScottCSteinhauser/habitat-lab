@@ -545,6 +545,46 @@ class LegRelPosAction(SimulatorTaskAction):
 
 
 @registry.register_task_action
+class LegRelPosActionSymmetrical(SimulatorTaskAction):
+    """
+    The leg motor targets are offset by the delta joint values specified by the
+    action, symmetry is enforced
+    """
+
+    @property
+    def action_space(self):
+        return spaces.Box(
+            shape=(self._config.LEG_JOINT_DIMENSIONALITY,),
+            low=-1,
+            high=1,
+            dtype=np.float32,
+        )
+
+    def step(self, action, should_step=True, *args, **kwargs):
+        # clip from -1 to 1
+        action = np.clip(action, -1, 1) # should be 4 dimensions
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
+        action *= self._config.DELTA_POS_LIMIT
+        
+        # take the 4 dimensions and apply them to both sides of the ant
+        delta_pos = []
+        delta_pos.extend(action[0:2])
+        delta_pos.extend(action[0:2] * -1.0)
+        delta_pos.extend(action[2:4])
+        delta_pos.extend(action[2:4] * -1.0)
+        
+        self._sim: AntV2Sim
+        #clip the motor targets to the joint range
+        self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        if should_step:
+            return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        # record the action for use in the ActionCost measure
+        self._sim.most_recent_action = delta_pos
+        return None
+
+
+@registry.register_task_action
 class LegAction(SimulatorTaskAction):
     """A continuous leg control into one action space."""
 
