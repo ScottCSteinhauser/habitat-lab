@@ -30,10 +30,16 @@ def main():
         help="path to config yaml containing info about experiment",
     )
     parser.add_argument(
+        "--task-overrides",
+        type=str,
+        required=False,
+        help="List of overrides for the task config provided as a single string.",
+    )
+    parser.add_argument(
         "opts",
         default=None,
         nargs=argparse.REMAINDER,
-        help="Modify config options from command line",
+        help="Modify config options from command line with remainder.",
     )
 
     args = parser.parse_args()
@@ -67,18 +73,20 @@ def execute_exp(config: Config, run_type: str) -> None:
         trainer.eval()
 
 
-def run_exp(exp_config: str, run_type: str, opts=None) -> None:
+def run_exp(exp_config: str, run_type: str, task_overrides=None, opts=None) -> None:
     r"""Runs experiment given mode and config
 
     Args:
         exp_config: path to config file.
         run_type: "train" or "eval.
+        task_overrides: List of overrides for the task config provided as a single string.
         opts: list of strings of additional config options.
 
     Returns:
         None.
     """
-    config = get_config(exp_config, opts)
+
+    config = get_config(exp_config, opts, task_overrides.split())
     execute_exp(config, run_type)
 
 
