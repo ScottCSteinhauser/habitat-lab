@@ -44,7 +44,20 @@ experiments: Dict[str, Dict[str,str]] = {
         "description": "Composite reward term.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "overrides": " RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
-    }
+    },
+    #NOTE: (best) joint error hyper-parameter options (02/11)
+    "joint_error_ant_high_learning_rate":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.lr 3e-4",
+    },
+    "joint_error_ant_low_clip":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
+    },
+    #NOTE: joint error hyper-parameter options round 2 (02/14)
+    
 }
 
 
