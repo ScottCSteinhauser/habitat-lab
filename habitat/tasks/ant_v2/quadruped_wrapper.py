@@ -90,6 +90,11 @@ class QuadrupedRobot(RobotInterface):
             )
             self.joint_dof_indices[link_id] = self.sim_obj.get_link_dof_offset(link_id)
         self.joint_limits = self.sim_obj.joint_position_limits
+        print("Robot Info:")
+        print(f"self.joint_pos_indices = {self.joint_pos_indices}")
+        print(f"self.joint_limits = {self.joint_limits}")
+        print(f"self.params.hip_joints = {self.params.hip_joints}")
+        print(f"self.params.ankle_joints = {self.params.ankle_joints}")
 
         # remove any default damping motors
         for motor_id in self.sim_obj.existing_joint_motor_ids:
@@ -121,6 +126,8 @@ class QuadrupedRobot(RobotInterface):
         # set initial states and targets
         self.hip_joint_pos = self.params.hip_init_params
         self.ankle_joint_pos = self.params.ankle_init_params
+        #set the joint states to the motor target values
+        self.leg_joint_state = self.leg_joint_pos
 
         self._update_motor_settings_cache()
 
@@ -131,32 +138,32 @@ class QuadrupedRobot(RobotInterface):
         agent_node = self._sim._default_agent.scene_node
         inv_T = agent_node.transformation.inverted()
 
-        for cam_prefix, sensor_names in self._cameras.items():
-            for sensor_name in sensor_names:
-                sens_obj = self._sim._sensors[sensor_name]._sensor_object
-                cam_info = self.params.cameras[cam_prefix]
+        # for cam_prefix, sensor_names in self._cameras.items():
+        #     for sensor_name in sensor_names:
+        #         sens_obj = self._sim._sensors[sensor_name]._sensor_object
+        #         cam_info = self.params.cameras[cam_prefix]
 
-                if cam_info.attached_link_id == -1:
-                    link_trans = self.sim_obj.transformation
-                else:
-                    link_trans = self.sim_obj.get_link_scene_node(
-                        self.params.ee_link
-                    ).transformation
+        #         if cam_info.attached_link_id == -1:
+        #             link_trans = self.sim_obj.transformation
+        #         else:
+        #             link_trans = self.sim_obj.get_link_scene_node(
+        #                 self.params.ee_link
+        #             ).transformation
 
-                cam_transform = mn.Matrix4.look_at(
-                    cam_info.cam_offset_pos,
-                    cam_info.cam_look_at_pos,
-                    mn.Vector3(0, 1, 0),
-                )
-                cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
-                cam_transform = inv_T @ cam_transform
+        #         cam_transform = mn.Matrix4.look_at(
+        #             cam_info.cam_offset_pos,
+        #             cam_info.cam_look_at_pos,
+        #             mn.Vector3(0, 1, 0),
+        #         )
+        #         cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
+        #         cam_transform = inv_T @ cam_transform
 
-                sens_obj.node.transformation = cam_transform
+        #         sens_obj.node.transformation = cam_transform
 
         # Guard against out of limit joints
         # TODO: should auto clamping be enabled instead? How often should we clamp?
-        if self._limit_robo_joints:
-            self.sim_obj.clamp_joint_limits()
+        #if self._limit_robo_joints:
+        #    self.sim_obj.clamp_joint_limits()
 
         self.sim_obj.awake = True
 
@@ -167,6 +174,8 @@ class QuadrupedRobot(RobotInterface):
         # reset the initial joint positions
         self.hip_joint_pos = self.params.hip_init_params
         self.ankle_joint_pos = self.params.ankle_init_params
+        #set the joint states to the motor target values
+        self.leg_joint_state = self.leg_joint_pos
 
         self._update_motor_settings_cache()
         self.update()
@@ -212,8 +221,8 @@ class QuadrupedRobot(RobotInterface):
         """Get the current target of both the hip and ankle joints motors."""
         motor_targets = np.zeros(len(self.params.hip_init_params) + len(self.params.ankle_init_params))
         for i, jidx in enumerate(self.params.hip_joints + self.params.ankle_joints) :
-            motor_targets[i] = self._get_motor_pos(jidx)
-        
+            jp_ix = self.joint_pos_indices[jidx]
+            motor_targets[jp_ix] = self._get_motor_pos(jidx)
         return motor_targets
 
     @leg_joint_pos.setter
@@ -223,7 +232,23 @@ class QuadrupedRobot(RobotInterface):
             raise ValueError("Control dimension does not match joint dimension")
 
         for i, jidx in enumerate(self.params.hip_joints + self.params.ankle_joints):
-            self._set_motor_pos(jidx, ctrl[i])
+            jp_ix = self.joint_pos_indices[jidx]
+            self._set_motor_pos(jidx, ctrl[jp_ix])
+
+    @property
+    def leg_joint_state(self) -> np.ndarray:
+        """Get the current joint state for the legs"""
+        return self.sim_obj.joint_positions
+    
+    @leg_joint_state.setter
+    def leg_joint_state(self, ctrl: List[float]) -> None:
+        """Set the current joint state for the legs"""
+        self.sim_obj.joint_positions = ctrl
+
+    def random_pose(self):
+        """Compute a random pose within the joint limits."""
+        #NOTE: assume no un-limited joints 
+        return np.random.uniform(self.joint_limits[0], self.joint_limits[1])
 
     def _set_motor_pos(self, joint, ctrl):
         self.joint_motors[joint][1].position_target = ctrl

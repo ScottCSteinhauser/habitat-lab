@@ -1,5 +1,5 @@
 ENVIRONMENT:
-    MAX_EPISODE_STEPS: 300
+    MAX_EPISODE_STEPS: 150
 
 SIMULATOR:
   TYPE: Ant-v2-sim
@@ -9,22 +9,31 @@ SIMULATOR:
     HEIGHT: 1.5
     IS_SET_START_STATE: False
     RADIUS: 0.1
-    SENSORS: ['HEAD_RGB_SENSOR', 'THIRD_RGB_SENSOR']
-    START_POSITION: [0, 0, 0]
+    SENSORS: ['HEAD_RGB_SENSOR', 'DEPTH_SENSOR', 'THIRD_SENSOR']
+    START_POSITION: [0, -0.2, 0]
     START_ROTATION: [0, 0, 1.6, 1]
   HEAD_RGB_SENSOR:
         WIDTH: 128
         HEIGHT: 128
-  THIRD_RGB_SENSOR:
+  THIRD_SENSOR:
         WIDTH: 512
         HEIGHT: 512
         POSITION: [-2,2,0]
         HFOV: 90
         ORIENTATION: [-0.5, -1.57,0.0]
-  LEG_REST: [0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, -1.0]
+  DEPTH_SENSOR:
+        WIDTH: 128
+        HEIGHT: 128
+        MIN_DEPTH: 0.0
+        MAX_DEPTH: 10.0
+        NORMALIZE_DEPTH: True
+  LEG_REST: [0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0]
   ROBOT_URDF: data/robots/ant.urdf
-  CTRL_FREQ: 120.0
-  AC_FREQ_RATIO: 4
+  #NOTE: these below are unused
+  #CTRL_FREQ: 120.0
+  #AC_FREQ_RATIO: 4
+
+  # LOAD_OBSTACLES: True # Loads obstacles for the ant to avoid
 
   HABITAT_SIM_V0:
     ALLOW_SLIDING: True
@@ -37,19 +46,30 @@ TASK:
   TYPE: Ant-v2-task
   ANT_OBSERVATION_SPACE_SENSOR:
         TYPE: "AntObservationSpaceSensor"
-        DIMENSIONALITY: 27
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 
   X_LOCATION:
     TYPE: "XLocation"
-  MEASUREMENTS: ["X_LOCATION"]
+  VECTOR_ROOT_DELTA:
+    TYPE: "VectorRootDelta"
+  JOINT_STATE_ERROR:
+    TYPE: "JointStateError"
+  JOINT_STATE_MAX_ERROR:
+    TYPE: "JointStateMaxError"
+  ACTIVE_CONTACTS:
+    TYPE: "ActiveContacts"
+  ACTION_COST:
+    TYPE: "ActionCost"
+  COMPOSITE_ANT_REWARD:
+    TYPE: "CompositeAntReward"
+  MEASUREMENTS: ["X_LOCATION", "VECTOR_ROOT_DELTA", "JOINT_STATE_ERROR", "JOINT_STATE_MAX_ERROR", "ACTIVE_CONTACTS", "ACTION_COST", "COMPOSITE_ANT_REWARD"]
 
   ACTIONS:
     LEG_ACTION:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosAction"
       LEG_JOINT_DIMENSIONALITY: 8
-      DELTA_POS_LIMIT: 0.0125
+      DELTA_POS_LIMIT: 0.1
   POSSIBLE_ACTIONS:
     - LEG_ACTION
 

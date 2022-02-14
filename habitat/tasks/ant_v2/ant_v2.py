@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-from collections import defaultdict
-from typing import Any, List, Optional, Tuple
+from collections import defaultdict, OrderedDict
+from typing import Any, List, Optional, Tuple, Dict, Union
 
 import attr
 import numpy as np
@@ -24,6 +24,7 @@ from habitat.core.logging import logger
 from habitat.core.registry import registry
 from habitat.core.simulator import (
     AgentState,
+    DepthSensor,
     RGBSensor,
     Sensor,
     SensorTypes,
@@ -55,6 +56,7 @@ except ImportError:
 
 # import quadruped_wrapper
 from habitat.tasks.ant_v2.ant_robot import AntV2Robot
+from habitat.tasks.ant_v2.ant_v2_sim_debug_utils import AntV2SimDebugVisualizer
 
 
 def merge_sim_episode_with_object_config(sim_config, episode):
@@ -77,12 +79,20 @@ class AntV2Sim(HabitatSim):
         self.prev_scene_id = None
         self.enable_physics = True
         self.robot = None
+        #used to measure root position delta for reward
+        self.prev_robot_pos = None
+        
+        #used to give reward for magnitude of action
+        self.most_recent_action = None
 
         # Number of physics updates per action
-        self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
+        #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
         # The physics update time step.
-        self.ctrl_freq = agent_config.CTRL_FREQ
+        #self.ctrl_freq = agent_config.CTRL_FREQ
         # Effective control speed is (ctrl_freq/ac_freq_ratio)
+        self.load_obstacles = False
+        # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
+
 
         self.art_objs = []
         self.start_art_states = {}
@@ -96,6 +106,9 @@ class AntV2Sim(HabitatSim):
         self.concur_render = self.habitat_config.get(
             "CONCUR_RENDER", True
         ) and hasattr(self, "get_sensor_observations_async_start")
+        #print(f"self.concur_render = {self.concur_render}")
+
+        self.debug_visualizer = AntV2SimDebugVisualizer(self)
 
     def _try_acquire_context(self):
         # Is this relevant?
@@ -108,6 +121,11 @@ class AntV2Sim(HabitatSim):
 
         config["SCENE"] = ep_info["scene_id"]
         super().reconfigure(config)
+
+        #add eval/debug visualizations if in eval mode
+        self.is_eval = "THIRD_SENSOR" in self.habitat_config.AGENT_0.SENSORS
+        self.robot_root_path = []
+        #print(f"self.is_eval = {self.is_eval}")
 
         self.ep_info = ep_info
 
@@ -134,37 +152,107 @@ class AntV2Sim(HabitatSim):
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
+            self.prev_robot_pos = self.robot.base_pos
 
             # add floor
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
             floor = obj_templates_mgr.get_template_by_handle(cube_handle)
-            floor.scale = np.array([20.0, 0.05, 20.0])
+            #should be thicker than 0.08 for better collision margin stability
+            floor.scale = np.array([20.0, 0.1, 20.0])
 
             obj_templates_mgr.register_template(floor, "floor")
             floor_obj = rigid_obj_mgr.add_object_by_template_handle("floor")
-            floor_obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
-
-            floor_obj.translation = np.array([2.50, -2, 0.5])
+            floor_obj.translation = np.array([2.50, -1, 0.5])
             floor_obj.motion_type = habitat_sim.physics.MotionType.STATIC
+            
+            obstacles = []
+            if self.load_obstacles:
+                # load periodically placed obstacles
+                # add floor
+                cube_obstacle = obj_templates_mgr.get_template_by_handle(cube_handle)
+                cube_obstacle.scale = np.array([0.1, 1, 4.8])
+                # TODO: COLOR OBSTACLE RED
+                obj_templates_mgr.register_template(cube_obstacle, "cube_obstacle")
+                
+                for i in range(6):
+                    obstacles.append(rigid_obj_mgr.add_object_by_template_handle("cube_obstacle"))
+                    obstacles[-1].motion_type = habitat_sim.physics.MotionType.KINEMATIC
+                    obstacles[-1].translation = np.array([i*3 + 2, -0.5, 5 * (1 - 2 * (i % 2))])
+                    obstacles[-1].motion_type = habitat_sim.physics.MotionType.STATIC
+                    
+                    
         else: # environment is already loaded; reset the Ant
             self.robot.reset()
             self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
+            self.prev_robot_pos = self.robot.base_pos
 
     def step(self, action):
-        # what to do with action?
+        #cache the position before updating
+        self.prev_robot_pos = self.robot.base_pos
+        self.step_physics(1.0 / 30.0)
+
+        if self.is_eval:
+            self.robot_root_path.append(self.robot.base_pos)
 
         # returns new observation after step
-        self.step_physics(1.0 / 60.0)
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
         return obs
 
-    # Need to figure out MVP for the simulator + how to set up a camera which isn't part of the obs space.
-    # Also need to figure out how to define rewards based on measurements/observations
+    def debug_draw(self):
+        if self.is_eval:
+            #draw some debug line visualizations
+            self.debug_visualizer.draw_axis()
+            if len(self.robot_root_path) > 1:
+                self.debug_visualizer.draw_path(self.robot_root_path)
 
+    @property
+    def observational_space_size(self) -> int:
+        """Return the size of your observational space.
+        Maybe there is a better way than to make you do this manually?"""
+        return 45
+
+    @property
+    def observational_space(self) -> np.ndarray:
+        """
+        The observation feature for the robot.
+        Comment-out or add whatever here.
+        """
+
+        obs_terms = []
+
+        # base position (3D)
+        obs_terms.extend([x for x in self.robot.base_pos])
+
+        # base orientation (4D) - quaternion
+        obs_terms.extend([x for x in list(self.robot.base_rot.vector)])
+        obs_terms.extend([self.robot.base_rot.scalar])
+
+        # base linear velocity (3D)
+        obs_terms.extend([x for x in list(self.robot.base_velocity)])
+
+        # base angular velocity (3D)
+        obs_terms.extend([x for x in list(self.robot.base_angular_velocity)])
+
+        # ant joint velocity (8D)
+        obs_terms.extend([x for x in list(self.robot.joint_velocities)])
+
+        # ant joint position states (8D) (where am I now?)
+        # NOTE: this is the state used in joint based rewards
+        obs_terms.extend([x for x in list(self.robot.leg_joint_state)])
+
+        # ant joint motor targets (8D) (where do I want to be?) (Radians)
+        # NOTE: this is the state modified by the action
+        obs_terms.extend([x for x in list(self.robot.leg_joint_pos)])
+
+        # joint state rest position target (8D) (for joint error reward)
+        obs_terms.extend([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+
+        obs_space = np.array(obs_terms)
+        return obs_space
 
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
@@ -182,7 +270,7 @@ class AntObservationSpaceSensor(Sensor):
 
     def _get_observation_space(self, *args: Any, **kwargs: Any):
         return spaces.Box(
-            low=-np.inf, high=np.inf, shape=(27,), dtype=np.float
+            low=-np.inf, high=np.inf, shape=(self._sim.observational_space_size,), dtype=np.float
         )
 
     def _get_sensor_type(self, *args: Any, **kwargs: Any):
@@ -191,42 +279,13 @@ class AntObservationSpaceSensor(Sensor):
     def get_observation(
         self, observations, episode, *args: Any, **kwargs: Any
     ):
-        obs = self._sim.robot.observational_space
+        obs = self._sim.observational_space
         return obs
 
+class VirtualMeasure(Measure):
+    """Implements some basic functionality to avoid duplication."""
 
-# @registry.register_sensor
-# class AntObservationSpaceSensor(Sensor):
-
-#     cls_uuid: str = "ant_observation_space_sensor"
-
-#     def __init__(
-#         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
-#     ):
-#         self._sim = sim
-#         super().__init__(config=config)
-
-#     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
-#         return self.cls_uuid
-
-#     def _get_observation_space(self, *args: Any, **kwargs: Any):
-#         return spaces.Box(low=-np.inf, high=np.inf, shape=(27,), dtype=np.float)
-
-#     def _get_sensor_type(self, *args: Any, **kwargs: Any):
-#         return SensorTypes.NORMAL
-
-#     def get_observation(
-#         self, observations, episode, *args: Any, **kwargs: Any
-#     ):
-#         obs = self._sim.robot.observational_space
-#         return obs
-
-
-@registry.register_measure
-class XLocation(Measure):
-    """The measure calculates the x component of the robot's location."""
-
-    cls_uuid: str = "X_LOCATION"
+    cls_uuid: str = "VIRTUAL_MEASURE_DO_NOT_USE"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
@@ -242,6 +301,18 @@ class XLocation(Measure):
     def reset_metric(self, episode, *args: Any, **kwargs: Any):
         self._metric = None
 
+
+@registry.register_measure
+class XLocation(VirtualMeasure):
+    """The measure calculates the x component of the robot's location."""
+
+    cls_uuid: str = "X_LOCATION"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
@@ -251,6 +322,175 @@ class XLocation(Measure):
         current_position = self._sim.robot.base_pos
         self._metric = current_position.x
 
+@registry.register_measure
+class VectorRootDelta(VirtualMeasure):
+    """Measures the agent's root motion along a target vector."""
+
+    cls_uuid: str = "VECTOR_ROOT_DELTA"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        self.vector = np.array([1,0,0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None or self._sim.prev_robot_pos is None:
+            self._metric = None
+        #projected_vector = (displacement.dot(v) / norm(v)^2) * v
+        #v is unit, so magnitude reduces to displacement.dot(v)
+        displacement = self._sim.robot.base_pos - self._sim.prev_robot_pos
+        self._metric = np.dot(displacement, self.vector)
+
+@registry.register_measure
+class JointStateError(VirtualMeasure):
+    """The measure calculates the error between current and target joint states"""
+
+    cls_uuid: str = "JOINT_STATE_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+
+        current_state = self._sim.robot.leg_joint_state
+        
+        self._metric = -np.linalg.norm(current_state - self.target_state)
+        #print(self._metric)
+
+@registry.register_measure
+class JointStateMaxError(VirtualMeasure):
+    """The measure calculates the max error between current and target joint states"""
+
+    cls_uuid: str = "JOINT_STATE_MAX_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+
+        current_state = self._sim.robot.leg_joint_state
+        
+        self._metric = -np.max(np.abs(current_state - self.target_state))
+
+@registry.register_measure
+class ActiveContacts(VirtualMeasure):
+    # TODO: Set this such that only contact points made by the ant are considered.
+    # Inspired by MuJoCo's ant-v2 reward structure
+    """The measure calculates the number of active contact points in the environment"""
+
+    cls_uuid: str = "ACTIVE_CONTACTS"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        
+        self._metric = self._sim.get_physics_num_active_contact_points()
+        #print(self._metric)
+
+@registry.register_measure
+class ActionCost(VirtualMeasure):
+    # Inspired by MuJoCo's ant-v2 reward structure
+    """Actions which have greater magnitudes are more costly."""
+
+    cls_uuid: str = "ACTION_COST"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        #magnitude of the action vector rather than sum of squares.
+        self._metric = -np.linalg.norm(self._sim.most_recent_action)
+        #self._metric = -np.sum(np.square(self._sim.most_recent_action))
+        #print(self._metric)
+
+@registry.register_measure
+class CompositeAntReward(VirtualMeasure):
+    """The measure calculates the error between current and target joint states"""
+
+    cls_uuid: str = "COMPOSITE_ANT_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #add all potential dependencies here:
+        self.measure_dependencies=[
+            VectorRootDelta.cls_uuid,
+            # JointStateError.cls_uuid,
+            ActiveContacts.cls_uuid,
+            ActionCost.cls_uuid,
+        ]
+
+        #NOTE: define active rewards and weights here:
+        self.active_measure_weights = {
+            VectorRootDelta.cls_uuid: 1000.0,
+            JointStateError.cls_uuid: 0.1,
+            #ActiveContacts.cls_uuid: -0.05,
+            ActionCost.cls_uuid: 0.5,
+        }
+        
+        super().__init__(sim, config, args)
+
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        task.measurements.check_measure_dependencies(
+            self.uuid,
+            self.measure_dependencies,
+        )
+
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs
+        )
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        reward = 0
+        #weight and combine reward terms
+        for measure_uuid,weight in self.active_measure_weights.items():
+            measure = task.measurements.measures[measure_uuid]
+            if measure.get_metric():
+                reward += measure.get_metric()*weight
+            #debugging: measure metrics will be None upon init
+            #else:
+            #    print(f"warning, {measure_uuid} is None")
+
+        self._metric = reward
 
 @registry.register_task_action
 class LegRelPosAction(SimulatorTaskAction):
@@ -271,14 +511,16 @@ class LegRelPosAction(SimulatorTaskAction):
     def step(self, delta_pos, should_step=True, *args, **kwargs):
         # clip from -1 to 1
         delta_pos = np.clip(delta_pos, -1, 1)
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
-        # The actual joint positions
         self._sim: AntV2Sim
-        self._sim.robot.leg_joint_pos = (
-            delta_pos + self._sim.robot.leg_joint_pos
-        )
+        #clip the motor targets to the joint range
+        self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        # record the action for use in the ActionCost measure
+        self._sim.most_recent_action = delta_pos
         return None
 
 
@@ -313,8 +555,7 @@ class AntV2Task(NavigationTask):
     def __init__(
         self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None
     ) -> None:
-        # config.enable_physics = True
         super().__init__(config=config, sim=sim, dataset=dataset)
-
+        
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)

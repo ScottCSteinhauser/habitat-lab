@@ -31,7 +31,7 @@ class AntV2Robot(QuadrupedRobot):
                     attached_link_id=-1,
                 ),
                 "robot_third": RobotCameraParams(
-                    cam_offset_pos=mn.Vector3(-0.5, 1.7, -0.5),
+                    cam_offset_pos=mn.Vector3(-10.5, 1.7, -0.5),
                     cam_look_at_pos=mn.Vector3(1, 0.0, 0.75),
                     attached_link_id=-1,
                 ),
@@ -68,44 +68,6 @@ class AntV2Robot(QuadrupedRobot):
     def base_transformation(self):
         add_rot = mn.Matrix4.rotation(mn.Rad(-np.pi / 2), mn.Vector3(1.0, 0, 0))
         return self.sim_obj.transformation @ add_rot
-
-    @property
-    def observational_space(self) -> np.ndarray:
-        """
-        27 dim obs space
-        z (height) of the Torso -> 1
-        orientation (quarternion x,y,z,w) of the Torso -> 4
-        8 Joint angles -> 8
-        3-dim directional velocity and 3-dim angular velocity -> 3+3=6
-        8 Joint velocity -> 8
-        """
-        # May expand to make use of external forces in the future (once this is exposed in habitat_sim & if joint torques are used in the future)
-        obs_space = np.zeros(27)
-        pos = super().base_pos
-        obs_space[0] = pos[1]
-
-        # ant orientation
-        orientation = super().base_rot
-        obs_space[1] = orientation.vector.x
-        obs_space[2] = orientation.vector.y
-        obs_space[3] = orientation.vector.z
-        obs_space[4] = orientation.scalar
-
-        # ant joint angles (Radians)
-        obs_space[5:13] = super().leg_joint_pos
-
-        # ant directional velocity
-        obs_space[13:16] = super().base_velocity
-
-        # ant angular velocity
-        obs_space[16:19] = super().base_angular_velocity
-
-        # ant joint velocity
-        obs_space[19:27] = super().joint_velocities
-        #obs_space[27:30] = super().base_pos
-
-        
-        return obs_space
 
     def update(self):
         super().update()

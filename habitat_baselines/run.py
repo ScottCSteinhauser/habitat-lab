@@ -49,12 +49,17 @@ def execute_exp(config: Config, run_type: str) -> None:
     random.seed(config.TASK_CONFIG.SEED)
     np.random.seed(config.TASK_CONFIG.SEED)
     torch.manual_seed(config.TASK_CONFIG.SEED)
+
     if config.FORCE_TORCH_SINGLE_THREADED and torch.cuda.is_available():
         torch.set_num_threads(1)
 
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
     assert trainer_init is not None, f"{config.TRAINER_NAME} is not supported"
     trainer = trainer_init(config)
+    
+    config.defrost()
+    config.TASK_CONFIG.TASK.RUN_TYPE = run_type
+    config.freeze()
 
     if run_type == "train":
         trainer.train()
