@@ -29,8 +29,11 @@ SIMULATOR:
         NORMALIZE_DEPTH: True
   LEG_REST: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # not being used at the moment
   ROBOT_URDF: data/robots/ant.urdf
+  
+  #NOTE: control frequency in Hz. Physics stepped at 1/CTRL_FREQ
+  CTRL_FREQ: 30
+  
   #NOTE: these below are unused
-  #CTRL_FREQ: 120.0
   #AC_FREQ_RATIO: 4
 
   # LOAD_OBSTACLES: True # Loads obstacles for the ant to avoid

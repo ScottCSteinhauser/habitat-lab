@@ -88,11 +88,10 @@ class AntV2Sim(HabitatSim):
         #used to give reward for magnitude of action
         self.most_recent_action = None
 
-        # Number of physics updates per action
-        #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
-        # The physics update time step.
-        #self.ctrl_freq = agent_config.CTRL_FREQ
-        # Effective control speed is (ctrl_freq/ac_freq_ratio)
+        #the control rate in Hz. Simulator is stepped at 1.0/ctrl_freq.
+        #NOTE: should be balanced with ENVIRONMENT.MAX_EPISODE_STEPS and RL.PPO.num_steps
+        self.ctrl_freq = agent_config.CTRL_FREQ
+        
         self.load_obstacles = False
         # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
 
@@ -195,7 +194,7 @@ class AntV2Sim(HabitatSim):
     def step(self, action):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
-        self.step_physics(1.0 / 30.0)
+        self.step_physics(1.0 / self.ctrl_freq)
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 

@@ -28,6 +28,9 @@ from habitat.tasks.ant_v2.ant_robot import AntV2Robot
 red = mn.Color4(1.0, 0.0, 0.0, 1.0)
 green = mn.Color4(0.0, 1.0, 0.0, 1.0)
 blue = mn.Color4(0.0, 0.0, 1.0, 1.0)
+black = mn.Color4(0.0, 0.0, 0.0, 1.0)
+yellow = mn.Color4(1.0, 1.0, 0.0, 1.0)
+purple = mn.Color4(1.0, 0.0, 1.0, 1.0)
 #define some other constants (don't change these)
 unit_x = mn.Vector3(1.0, 0.0, 0.0)
 unit_y = mn.Vector3(0.0, 1.0, 0.0)
@@ -53,7 +56,7 @@ class AntV2SimDebugVisualizer():
     def draw_vector(self, position, direction):
         """Draw a given vector at some position."""
         #NOTE: this is line between two points, so 2nd entry should be a point
-        self.dlr.draw_transformed_line(position, position+direction, blue)
+        self.dlr.draw_transformed_line(position, position+direction, black)
 
     def draw_path(self, points, c1=blue, c2=red):
         """Draw a path of points with a blue->red color gradient."""
