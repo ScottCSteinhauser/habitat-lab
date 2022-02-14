@@ -57,7 +57,27 @@ experiments: Dict[str, Dict[str,str]] = {
         "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
     #NOTE: joint error hyper-parameter options round 2 (02/14)
-    
+    "joint_error_ant_high_learning_rate_decay":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.lr 3e-4 RL.PPO.use_linear_lr_decay True",
+    },
+    "joint_error_ant_high_learning_rate_low_clip":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.lr 3e-4 RL.PPO.clip_param 0.1",
+    },
+    "joint_error_ant_clip_decay":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.use_linear_clip_decay True",
+    },
+    "joint_error_ant_clip_and_high_lr_decay":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.use_linear_clip_decay True RL.PPO.lr 3e-4 RL.PPO.use_linear_lr_decay True",
+    },
+
 }
 
 
