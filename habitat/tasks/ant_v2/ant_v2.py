@@ -79,6 +79,9 @@ class AntV2Sim(HabitatSim):
         self.prev_scene_id = None
         self.enable_physics = True
         self.robot = None
+        
+        # The direction we want the ant to progress in.
+        self.target_vector = np.array([1,0,0])
         #used to measure root position delta for reward
         self.prev_robot_pos = None
         
@@ -193,7 +196,6 @@ class AntV2Sim(HabitatSim):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / 30.0)
-
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -208,6 +210,14 @@ class AntV2Sim(HabitatSim):
             self.debug_visualizer.draw_axis()
             if len(self.robot_root_path) > 1:
                 self.debug_visualizer.draw_path(self.robot_root_path)
+            
+            #TODO: draw ant's egocentric vector
+            #Unsure how to multiple vectors here
+            #print(self.robot.base_transformation.__mul__(mn.Vector4(np.array([1,1,1,1]))))
+            #egocentric_vector = self.robot.base_transformation.inverted() * mn.Vector4(mn.Vector3(self.target_vector), 1)
+            #print(self.robot.base_transformation.inverted)
+            #t = mn.Vector3(self.robot.base_pos) + egocentric_vector
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), self.robot.base_transformation.up)
 
     @property
     def observational_space_size(self) -> int:
@@ -226,6 +236,9 @@ class AntV2Sim(HabitatSim):
 
         # base position (3D)
         obs_terms.extend([x for x in self.robot.base_pos])
+
+        #TODO: NEW ego centric x-direction vector
+        
 
         # base orientation (4D) - quaternion
         obs_terms.extend([x for x in list(self.robot.base_rot.vector)])
@@ -332,7 +345,7 @@ class VectorRootDelta(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.vector = np.array([1,0,0])
+        self.vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -410,8 +423,12 @@ class ActiveContacts(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-        
-        self._metric = self._sim.get_physics_num_active_contact_points()
+        contact_points = self._sim.get_physics_contact_points()
+        total_force = 0
+        for contact in contact_points:
+            total_force += contact.normal_force
+                
+        self._metric = total_force
         #print(self._metric)
 
 @registry.register_measure
@@ -448,16 +465,16 @@ class CompositeAntReward(VirtualMeasure):
         #add all potential dependencies here:
         self.measure_dependencies=[
             VectorRootDelta.cls_uuid,
-            # JointStateError.cls_uuid,
+            JointStateError.cls_uuid,
             ActiveContacts.cls_uuid,
             ActionCost.cls_uuid,
         ]
 
         #NOTE: define active rewards and weights here:
         self.active_measure_weights = {
-            VectorRootDelta.cls_uuid: 1000.0,
+            #VectorRootDelta.cls_uuid: 1000.0,
             JointStateError.cls_uuid: 0.1,
-            #ActiveContacts.cls_uuid: -0.05,
+            #ActiveContacts.cls_uuid: -0.005,
             ActionCost.cls_uuid: 0.5,
         }
         
@@ -513,6 +530,48 @@ class LegRelPosAction(SimulatorTaskAction):
         delta_pos = np.clip(delta_pos, -1, 1)
         #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
+        self._sim: AntV2Sim
+        #clip the motor targets to the joint range
+        self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        if should_step:
+            return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        # record the action for use in the ActionCost measure
+        self._sim.most_recent_action = delta_pos
+        return None
+
+
+@registry.register_task_action
+class LegRelPosActionSymmetrical(SimulatorTaskAction):
+    """
+    The leg motor targets are offset by the delta joint values specified by the
+    action, symmetry is enforced
+    """
+
+    @property
+    def action_space(self):
+        return spaces.Box(
+            shape=(self._config.LEG_JOINT_DIMENSIONALITY,),
+            low=-1,
+            high=1,
+            dtype=np.float32,
+        )
+
+    def step(self, action, should_step=True, *args, **kwargs):
+        # clip from -1 to 1
+        action = np.clip(action, -1, 1) # should be 4 dimensions
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
+        action *= self._config.DELTA_POS_LIMIT
+        
+        # take the 4 dimensions and apply them to both sides of the ant
+        delta_pos = []
+        delta_pos.extend(action[0:2])
+        delta_pos.extend(action[0:2])
+        delta_pos[-2] *= -1
+        delta_pos.extend(action[2:4])
+        delta_pos.extend(action[2:4])
+        delta_pos[-2] *= -1
+        
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])

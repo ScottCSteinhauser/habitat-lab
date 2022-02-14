@@ -33,6 +33,8 @@ unit_x = mn.Vector3(1.0, 0.0, 0.0)
 unit_y = mn.Vector3(0.0, 1.0, 0.0)
 unit_z = mn.Vector3(0.0, 0.0, 1.0)
 
+origin = mn.Vector3(0.0, 0.0, 0.0)
+
 class AntV2SimDebugVisualizer():
     def __init__(self, sim):
         self._sim = sim
@@ -47,6 +49,11 @@ class AntV2SimDebugVisualizer():
     def lerp_color(self, c1, c2, t):
         """Return the interpolated color at t in range [0,1]."""
         return c1 + (c2-c1)*t
+
+    def draw_vector(self, position, direction):
+        """Draw a given vector at some position."""
+        #NOTE: this is line between two points, so 2nd entry should be a point
+        self.dlr.draw_transformed_line(position, position+direction, blue)
 
     def draw_path(self, points, c1=blue, c2=red):
         """Draw a path of points with a blue->red color gradient."""

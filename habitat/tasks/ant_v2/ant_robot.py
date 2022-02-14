@@ -49,6 +49,7 @@ class AntV2Robot(QuadrupedRobot):
                 "torso",
             },
         )
+        self.physics_manager = sim.get_rigid_object_manager()
         super().__init__(ant_params, urdf_path, sim, limit_robo_joints, fixed_base)
 
 

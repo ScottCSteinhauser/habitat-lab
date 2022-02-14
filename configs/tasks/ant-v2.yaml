@@ -27,7 +27,7 @@ SIMULATOR:
         MIN_DEPTH: 0.0
         MAX_DEPTH: 10.0
         NORMALIZE_DEPTH: True
-  LEG_REST: [0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0]
+  LEG_REST: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # not being used at the moment
   ROBOT_URDF: data/robots/ant.urdf
   #NOTE: these below are unused
   #CTRL_FREQ: 120.0
@@ -69,6 +69,11 @@ TASK:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosAction"
       LEG_JOINT_DIMENSIONALITY: 8
+      DELTA_POS_LIMIT: 0.1
+    LEG_ACTION_SYMMETRICAL:
+      TYPE: "LegAction"
+      LEG_CONTROLLER: "LegRelPosActionSymmetrical"
+      LEG_JOINT_DIMENSIONALITY: 4
       DELTA_POS_LIMIT: 0.1
   POSSIBLE_ACTIONS:
     - LEG_ACTION
