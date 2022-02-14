@@ -461,21 +461,18 @@ class CompositeAntReward(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        #add all potential dependencies here:
-        self.measure_dependencies=[
-            VectorRootDelta.cls_uuid,
-            JointStateError.cls_uuid,
-            ActiveContacts.cls_uuid,
-            ActionCost.cls_uuid,
-        ]
+        #assert that the reward term is properly configured
+        assert config.COMPONENTS
+        assert config.WEIGHTS
+        assert len(config.COMPONENTS) == len(config.WEIGHTS)
 
-        #NOTE: define active rewards and weights here:
-        self.active_measure_weights = {
-            #VectorRootDelta.cls_uuid: 1000.0,
-            JointStateError.cls_uuid: 0.1,
-            #ActiveContacts.cls_uuid: -0.005,
-            ActionCost.cls_uuid: 0.5,
-        }
+        #add all potential dependencies from config here:
+        self.measure_dependencies=config.COMPONENTS
+
+        #NOTE: define active rewards and weights from config here:
+        self.active_measure_weights = {}
+        for i,measure_uuid in enumerate(self.measure_dependencies):
+            self.active_measure_weights[measure_uuid] = float(config.WEIGHTS[i])
         
         super().__init__(sim, config, args)
 

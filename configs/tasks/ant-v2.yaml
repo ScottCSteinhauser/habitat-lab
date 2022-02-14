@@ -65,6 +65,9 @@ TASK:
     TYPE: "ActionCost"
   COMPOSITE_ANT_REWARD:
     TYPE: "CompositeAntReward"
+    #setting up the defaults here
+    COMPONENTS: ["ACTION_COST","JOINT_STATE_ERROR","X_LOCATION"]
+    WEIGHTS: [1.0, 1.0, 10.0]
   #NOTE: modify the active MEASUREMENTS below corresponding to task
   MEASUREMENTS: ["X_LOCATION"]
 

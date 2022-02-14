@@ -91,6 +91,13 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_ERROR]\"",
         "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.use_linear_clip_decay True RL.PPO.lr 3e-4 RL.PPO.use_linear_lr_decay True",
     },
+    #NOTE: example of setting up a custom composite reward function.
+    "custom_composite":{
+        "description": "Customizing the composite reward term via config.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [ACTION_COST,JOINT_STATE_ERROR,X_LOCATION,COMPOSITE_ANT_REWARD] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [ACTION_COST,JOINT_STATE_ERROR,X_LOCATION] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,10.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
+    },
 
 }
 
@@ -99,7 +106,7 @@ run_types = ["eval", "train"]
 run_base = "python -u habitat_baselines/run.py"
 
 
-def run(experiment=None, run_type="train"):
+def run(experiment=None, run_type="train", testing=False):
     assert experiment in experiments
     assert run_type in run_types
 
@@ -132,8 +139,14 @@ def run(experiment=None, run_type="train"):
         overrides += " VIDEO_DIR data/videos/" + experiment + "/"
         #NOTE: this adds the extra sensor for visualization
         overrides += " SENSORS ['THIRD_SENSOR']"
-        #NOTE: number of videos/data_points you want
-        overrides += " NUM_ENVIRONMENTS 3"
+        if not testing:
+            #NOTE: number of videos/data_points you want
+            overrides += " NUM_ENVIRONMENTS 3"
+
+    #settings for easier debugging
+    if testing:
+        overrides += " NUM_ENVIRONMENTS 1"
+        overrides += " RL.PPO.num_mini_batch 1"
 
     #add the overrides
     full_command += overrides
@@ -156,6 +169,7 @@ if __name__ == "__main__":
         required=True,
         help="name of the experiment as defined in the experiments dict",
     )
+    parser.add_argument("--test", action="store_true", help="If provided, sets mini-batches to 1 and environments to 1 for easy debugging.")
 
     args = parser.parse_args()
-    run(experiment=args.exp, run_type=args.type)
+    run(experiment=args.exp, run_type=args.type, testing=args.test)
