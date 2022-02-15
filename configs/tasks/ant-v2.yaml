@@ -48,7 +48,29 @@ SIMULATOR:
 TASK:
   TYPE: Ant-v2-task
   ANT_OBSERVATION_SPACE_SENSOR:
-        TYPE: "AntObservationSpaceSensor"
+    TYPE: "AntObservationSpaceSensor"
+    #list of possible terms to add and their parameters
+    BASE_POSITION:
+      SIZE: 3
+    BASE_QUATERNION:
+      SIZE: 4
+    BASE_LIN_VEL:
+      SIZE: 3
+    BASE_ANG_VEL:
+      SIZE: 3
+    JOINT_POS:
+      SIZE: 8
+    JOINT_MOTOR_POS:
+      SIZE: 8
+    JOINT_VEL:
+      SIZE: 8
+    JOINT_TARGET:
+      SIZE: 8
+      POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
+    #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
+    #NOTE: list active terms here:
+    ACTIVE_TERMS: ["JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
+
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 
   X_LOCATION:
