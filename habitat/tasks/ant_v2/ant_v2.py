@@ -82,8 +82,8 @@ class AntV2Sim(HabitatSim):
         
         # The direction we want the ant to progress in.
         self.target_vector = np.array([1,0,0])
-        #used to measure root position delta for reward
-        self.prev_robot_pos = None
+        #used to measure root transformation delta for reward
+        self.prev_robot_transformation = None
         
         #used to give reward for magnitude of action
         self.most_recent_action = None
@@ -154,7 +154,7 @@ class AntV2Sim(HabitatSim):
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
-            self.prev_robot_pos = self.robot.base_pos
+            self.prev_robot_transformation = self.robot.base_transformation
 
             # add floor
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
@@ -189,12 +189,13 @@ class AntV2Sim(HabitatSim):
                 self.habitat_config.AGENT_0.START_POSITION
             )
             self.robot.base_rot = math.pi / 2
-            self.prev_robot_pos = self.robot.base_pos
+            self.prev_robot_transformation = self.robot.base_transformation
 
     def step(self, action):
         #cache the position before updating
-        self.prev_robot_pos = self.robot.base_pos
         self.step_physics(1.0 / self.ctrl_freq)
+        self.prev_robot_transformation = self.robot.base_transformation
+        self.step_physics(1.0 / 30.0)
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -210,12 +211,7 @@ class AntV2Sim(HabitatSim):
             if len(self.robot_root_path) > 1:
                 self.debug_visualizer.draw_path(self.robot_root_path)
             
-            #TODO: draw ant's egocentric vector
-            #Unsure how to multiple vectors here
-            #print(self.robot.base_transformation.__mul__(mn.Vector4(np.array([1,1,1,1]))))
-            #egocentric_vector = self.robot.base_transformation.inverted() * mn.Vector4(mn.Vector3(self.target_vector), 1)
-            #print(self.robot.base_transformation.inverted)
-            #t = mn.Vector3(self.robot.base_pos) + egocentric_vector
+            # draw ant's orientation vector
             self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), self.robot.base_transformation.up)
 
 
@@ -346,11 +342,11 @@ class VectorRootDelta(VirtualMeasure):
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
-        if self._metric is None or self._sim.prev_robot_pos is None:
+        if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         #projected_vector = (displacement.dot(v) / norm(v)^2) * v
         #v is unit, so magnitude reduces to displacement.dot(v)
-        displacement = self._sim.robot.base_pos - self._sim.prev_robot_pos
+        displacement = self._sim.robot.base_pos - self._sim.prev_robot_transformation.translation
         self._metric = np.dot(displacement, self.vector)
 
 @registry.register_measure
@@ -419,6 +415,55 @@ class JointStateProductError(VirtualMeasure):
         #print(f"self.joint_norm_scale = {self.joint_norm_scale}")
         #print(f"normalized_errors = {normalized_errors}")
         self._metric = np.prod(np.ones(len(self.target_state)) - normalized_errors)
+        #print(self._metric)
+
+@registry.register_measure
+class UprightOrientationDeviationDelta(VirtualMeasure):
+    """The measure takes the dot product of the ant's orientation and the upward z vector. Uprightness is rewarded"""
+    cls_uuid: str = "UPRIGHT_ORIENTATION_DEVIATION_DELTA"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        
+        ant_up_vector = self._sim.robot.base_transformation.up
+        prev_ant_up_vector = self._sim.prev_robot_transformation.up
+        global_up_vector = mn.Vector3(0,1,0)
+        
+        self._metric = np.dot(ant_up_vector, global_up_vector) - np.dot(prev_ant_up_vector, global_up_vector)
+        #print(self._metric)
+
+@registry.register_measure
+class ForwardOrientationDeviationDelta(VirtualMeasure):
+    """The measure takes the dot product of the ant's orientation and the upward z vector. Uprightness is rewarded"""
+    cls_uuid: str = "FORWARD_ORIENTATION_DEVIATION_DELTA"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+                
+        # assume the front of the ant is facing the +x direction
+        ant_forward_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
+        self._metric = np.dot(ant_forward_vector, self._sim.target_vector)
+        
         #print(self._metric)
 
 @registry.register_measure
