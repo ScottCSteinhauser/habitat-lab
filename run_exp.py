@@ -115,7 +115,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "description": "Try LSTM to see if it works for PPO",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR]\"",
-        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.DDPPO.rnn_type LSTM RL.DDPPO.num_recurrent_layers 2",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.DDPPO.rnn_type LSTM RL.DDPPO.num_recurrent_layers 2 RL.DDPPO.distrib_backend NCCL",
     },
     "joint_error_ant_product_low_clip":{
         "description": "Try product of normalized error.",
