@@ -57,6 +57,16 @@ experiments: Dict[str, Dict[str,str]] = {
         "overrides": " RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
     #NOTE: joint error hyper-parameter options round 2 (02/14)
+    "delta_x_high_lr_low_clip":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
+    "delta_x_high_lr_low_clip_10hz_action":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
     
 }
 
