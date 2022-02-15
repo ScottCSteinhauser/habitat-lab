@@ -88,11 +88,10 @@ class AntV2Sim(HabitatSim):
         #used to give reward for magnitude of action
         self.most_recent_action = None
 
-        # Number of physics updates per action
-        #self.ac_freq_ratio = agent_config.AC_FREQ_RATIO
-        # The physics update time step.
-        #self.ctrl_freq = agent_config.CTRL_FREQ
-        # Effective control speed is (ctrl_freq/ac_freq_ratio)
+        #the control rate in Hz. Simulator is stepped at 1.0/ctrl_freq.
+        #NOTE: should be balanced with ENVIRONMENT.MAX_EPISODE_STEPS and RL.PPO.num_steps
+        self.ctrl_freq = agent_config.CTRL_FREQ
+        
         self.load_obstacles = False
         # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
 
@@ -195,7 +194,7 @@ class AntV2Sim(HabitatSim):
     def step(self, action):
         #cache the position before updating
         self.prev_robot_pos = self.robot.base_pos
-        self.step_physics(1.0 / 30.0)
+        self.step_physics(1.0 / self.ctrl_freq)
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
@@ -367,8 +366,11 @@ class JointStateError(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
+        self._normalized = False if not config.NORMALIZED else config.NORMALIZED
         #TODO: dynamic targets, for now just a rest pose
         self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        #NOTE: computed first time (scalar)
+        self.joint_norm_scale = None
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -378,8 +380,49 @@ class JointStateError(VirtualMeasure):
             self._metric = None
 
         current_state = self._sim.robot.leg_joint_state
-        
-        self._metric = -np.linalg.norm(current_state - self.target_state)
+
+        if self._normalized:
+            if self.joint_norm_scale is None:
+                lims = self._sim.robot.joint_limits
+                #per-element maximum error between lower|upper limits and target
+                max_errors = np.fmax(np.abs(self.target_state-lims[0]), np.abs(self.target_state-lims[1]))
+                self.joint_norm_scale = np.linalg.norm(max_errors)
+            self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
+        else:
+            self._metric = -np.linalg.norm(current_state - self.target_state)
+        #print(self._metric)
+
+@registry.register_measure
+class JointStateProductError(VirtualMeasure):
+    """The measure calculates the error between current and target joint states as a product of normalized terms [0,1]"""
+
+    cls_uuid: str = "JOINT_STATE_PRODUCT_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        #NOTE: computed first time
+        self.joint_norm_scale = None
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        if self.joint_norm_scale is None:
+            lims = self._sim.robot.joint_limits
+            #per-element maximum error between lower|upper limits and target
+            max_errors = np.fmax(np.abs(self.target_state-lims[0]), np.abs(self.target_state-lims[1]))
+            self.joint_norm_scale = np.reciprocal(max_errors)
+        current_state = self._sim.robot.leg_joint_state
+        #print(f"current_state = {current_state}")
+        normalized_errors = np.abs(current_state-self.target_state)*self.joint_norm_scale
+        #print(f"self.joint_norm_scale = {self.joint_norm_scale}")
+        #print(f"normalized_errors = {normalized_errors}")
+        self._metric = np.prod(np.ones(len(self.target_state)) - normalized_errors)
         #print(self._metric)
 
 @registry.register_measure
@@ -462,21 +505,18 @@ class CompositeAntReward(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        #add all potential dependencies here:
-        self.measure_dependencies=[
-            VectorRootDelta.cls_uuid,
-            JointStateError.cls_uuid,
-            ActiveContacts.cls_uuid,
-            ActionCost.cls_uuid,
-        ]
+        #assert that the reward term is properly configured
+        assert config.COMPONENTS
+        assert config.WEIGHTS
+        assert len(config.COMPONENTS) == len(config.WEIGHTS)
 
-        #NOTE: define active rewards and weights here:
-        self.active_measure_weights = {
-            #VectorRootDelta.cls_uuid: 1000.0,
-            JointStateError.cls_uuid: 0.1,
-            #ActiveContacts.cls_uuid: -0.005,
-            ActionCost.cls_uuid: 0.5,
-        }
+        #add all potential dependencies from config here:
+        self.measure_dependencies=config.COMPONENTS
+
+        #NOTE: define active rewards and weights from config here:
+        self.active_measure_weights = {}
+        for i,measure_uuid in enumerate(self.measure_dependencies):
+            self.active_measure_weights[measure_uuid] = float(config.WEIGHTS[i])
         
         super().__init__(sim, config, args)
 

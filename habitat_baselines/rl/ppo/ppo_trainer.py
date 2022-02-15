@@ -1085,6 +1085,8 @@ class PPOTrainer(BaseRLTrainer):
                     ] = episode_stats
 
                     if len(self.config.VIDEO_OPTION) > 0: # generates video & formats it for tensorboard
+                        #NOTE: getting fps from the control frequency for videos
+                        fps = self.config.TASK_CONFIG.SIMULATOR.CTRL_FREQ if self.config.TASK_CONFIG.SIMULATOR.CTRL_FREQ else 30
                         generate_video(
                             video_option=self.config.VIDEO_OPTION,
                             video_dir=self.config.VIDEO_DIR,
@@ -1093,7 +1095,7 @@ class PPOTrainer(BaseRLTrainer):
                             checkpoint_idx=checkpoint_index,
                             metrics=self._extract_scalars_from_info(infos[i]),
                             tb_writer=writer,
-                            fps = 30
+                            fps = fps
                         )
 
                         rgb_frames[i] = []

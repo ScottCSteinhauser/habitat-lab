@@ -230,6 +230,7 @@ def split_opts_lists(opts:list):
 def get_config(
     config_paths: Optional[Union[List[str], str]] = None,
     opts: Optional[list] = None,
+    task_opts: Optional[list]=None,
 ) -> CN:
     r"""Create a unified config with default values overwritten by values from
     :ref:`config_paths` and overwritten by options from :ref:`opts`.
@@ -240,6 +241,7 @@ def get_config(
         opts: Config options (keys, values) in a list (e.g., passed from
         command line into the config. For example, ``opts = ['FOO.BAR',
         0.5]``. Argument can be used for parameter sweeping or quick tests.
+        task_opts: Config options (keys, values). Same as "opts", but overrides the task config.
     """
     config = _C.clone()
     if config_paths:
@@ -257,7 +259,11 @@ def get_config(
             if k == "BASE_TASK_CONFIG_PATH":
                 config.BASE_TASK_CONFIG_PATH = v
 
-    config.TASK_CONFIG = get_task_config(config.BASE_TASK_CONFIG_PATH)
+    #override TASK configs:
+    if task_opts:
+        task_opts = split_opts_lists(task_opts)
+    config.TASK_CONFIG = get_task_config(config.BASE_TASK_CONFIG_PATH, opts=task_opts)
+    
     if opts:
         merged_opts = split_opts_lists(opts)
         config.CMD_TRAILING_OPTS = config.CMD_TRAILING_OPTS + merged_opts

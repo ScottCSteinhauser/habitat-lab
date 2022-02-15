@@ -29,8 +29,11 @@ SIMULATOR:
         NORMALIZE_DEPTH: True
   LEG_REST: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # not being used at the moment
   ROBOT_URDF: data/robots/ant.urdf
+  
+  #NOTE: control frequency in Hz. Physics stepped at 1/CTRL_FREQ
+  CTRL_FREQ: 30
+  
   #NOTE: these below are unused
-  #CTRL_FREQ: 120.0
   #AC_FREQ_RATIO: 4
 
   # LOAD_OBSTACLES: True # Loads obstacles for the ant to avoid
@@ -54,15 +57,24 @@ TASK:
     TYPE: "VectorRootDelta"
   JOINT_STATE_ERROR:
     TYPE: "JointStateError"
+    #normalize return such that max error is -1 using joint limits 
+    NORMALIZED: False
   JOINT_STATE_MAX_ERROR:
     TYPE: "JointStateMaxError"
+  JOINT_STATE_PRODUCT_ERROR:
+    #measure is the product of inverted normalized terms (i.e. max for each joint is 1, min is 0, total is product) 
+    TYPE: "JointStateProductError"
   ACTIVE_CONTACTS:
     TYPE: "ActiveContacts"
   ACTION_COST:
     TYPE: "ActionCost"
   COMPOSITE_ANT_REWARD:
     TYPE: "CompositeAntReward"
-  MEASUREMENTS: ["X_LOCATION", "VECTOR_ROOT_DELTA", "JOINT_STATE_ERROR", "JOINT_STATE_MAX_ERROR", "ACTIVE_CONTACTS", "ACTION_COST", "COMPOSITE_ANT_REWARD"]
+    #setting up the defaults here
+    COMPONENTS: ["ACTION_COST","JOINT_STATE_ERROR","X_LOCATION"]
+    WEIGHTS: [1.0, 1.0, 10.0]
+  #NOTE: modify the active MEASUREMENTS below corresponding to task
+  MEASUREMENTS: ["X_LOCATION", "JOINT_STATE_ERROR"]
 
   ACTIONS:
     LEG_ACTION:
