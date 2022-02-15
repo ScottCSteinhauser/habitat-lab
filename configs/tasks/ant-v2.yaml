@@ -57,8 +57,13 @@ TASK:
     TYPE: "VectorRootDelta"
   JOINT_STATE_ERROR:
     TYPE: "JointStateError"
+    #normalize return such that max error is -1 using joint limits 
+    NORMALIZED: False
   JOINT_STATE_MAX_ERROR:
     TYPE: "JointStateMaxError"
+  JOINT_STATE_PRODUCT_ERROR:
+    #measure is the product of inverted normalized terms (i.e. max for each joint is 1, min is 0, total is product) 
+    TYPE: "JointStateProductError"
   ACTIVE_CONTACTS:
     TYPE: "ActiveContacts"
   ACTION_COST:
@@ -69,7 +74,7 @@ TASK:
     COMPONENTS: ["ACTION_COST","JOINT_STATE_ERROR","X_LOCATION"]
     WEIGHTS: [1.0, 1.0, 10.0]
   #NOTE: modify the active MEASUREMENTS below corresponding to task
-  MEASUREMENTS: ["X_LOCATION"]
+  MEASUREMENTS: ["X_LOCATION", "JOINT_STATE_ERROR"]
 
   ACTIONS:
     LEG_ACTION:

@@ -98,7 +98,37 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [ACTION_COST,JOINT_STATE_ERROR,X_LOCATION,COMPOSITE_ANT_REWARD] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [ACTION_COST,JOINT_STATE_ERROR,X_LOCATION] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,10.0]\"",
         "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD",
     },
-
+    #NOTE: joint error hyper-parameter options round 3 (02/14) - trying different step sizes and deltas
+    "joint_error_ant_use_log_std":{
+        "description": "Use the log std action distribution as suggested by Hab2 reach task",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR]\"",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.POLICY.ACTION_DIST.use_log_std True",
+    },
+    "joint_error_ant_use_log_std_low_clip_high_lr":{
+        "description": "Use the log std action distribution as suggested by Hab2 reach task",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR]\"",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.POLICY.ACTION_DIST.use_log_std True RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
+    "joint_error_ant_test_change_architecture":{
+        "description": "Try LSTM to see if it works for PPO",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR]\"",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.DDPPO.rnn_type LSTM RL.DDPPO.num_recurrent_layers 2",
+    },
+    "joint_error_ant_product_low_clip":{
+        "description": "Try product of normalized error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_PRODUCT_ERROR,JOINT_STATE_ERROR]\"",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_PRODUCT_ERROR RL.REWARD_MEASURE JOINT_STATE_PRODUCT_ERROR RL.PPO.clip_param 0.1",
+    },
+    "joint_error_ant_normalized_low_clip":{
+        "description": "Try normalized error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_PRODUCT_ERROR,JOINT_STATE_ERROR] TASK.JOINT_STATE_ERROR.NORMALIZED True\"",
+        "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
+    },
 }
 
 

@@ -366,8 +366,11 @@ class JointStateError(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
+        self._normalized = False if not config.NORMALIZED else config.NORMALIZED
         #TODO: dynamic targets, for now just a rest pose
         self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        #NOTE: computed first time (scalar)
+        self.joint_norm_scale = None
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -377,8 +380,49 @@ class JointStateError(VirtualMeasure):
             self._metric = None
 
         current_state = self._sim.robot.leg_joint_state
-        
-        self._metric = -np.linalg.norm(current_state - self.target_state)
+
+        if self._normalized:
+            if self.joint_norm_scale is None:
+                lims = self._sim.robot.joint_limits
+                #per-element maximum error between lower|upper limits and target
+                max_errors = np.fmax(np.abs(self.target_state-lims[0]), np.abs(self.target_state-lims[1]))
+                self.joint_norm_scale = np.linalg.norm(max_errors)
+            self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
+        else:
+            self._metric = -np.linalg.norm(current_state - self.target_state)
+        #print(self._metric)
+
+@registry.register_measure
+class JointStateProductError(VirtualMeasure):
+    """The measure calculates the error between current and target joint states as a product of normalized terms [0,1]"""
+
+    cls_uuid: str = "JOINT_STATE_PRODUCT_ERROR"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        #NOTE: computed first time
+        self.joint_norm_scale = None
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        if self.joint_norm_scale is None:
+            lims = self._sim.robot.joint_limits
+            #per-element maximum error between lower|upper limits and target
+            max_errors = np.fmax(np.abs(self.target_state-lims[0]), np.abs(self.target_state-lims[1]))
+            self.joint_norm_scale = np.reciprocal(max_errors)
+        current_state = self._sim.robot.leg_joint_state
+        #print(f"current_state = {current_state}")
+        normalized_errors = np.abs(current_state-self.target_state)*self.joint_norm_scale
+        #print(f"self.joint_norm_scale = {self.joint_norm_scale}")
+        #print(f"normalized_errors = {normalized_errors}")
+        self._metric = np.prod(np.ones(len(self.target_state)) - normalized_errors)
         #print(self._metric)
 
 @registry.register_measure
