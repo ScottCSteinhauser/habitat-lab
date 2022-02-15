@@ -427,7 +427,8 @@ class ForwardOrientationDeviationDelta(VirtualMeasure):
                 
         # assume the front of the ant is facing the +x direction
         ant_forward_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
-        self._metric = np.dot(ant_forward_vector, self._sim.target_vector)
+        prev_ant_forward_vector = self._sim.prev_robot_transformation.transform_vector(mn.Vector3(1, 0, 0))
+        self._metric = np.dot(ant_forward_vector, self._sim.target_vector) - np.dot(prev_ant_forward_vector, self._sim.target_vector)
         
         #print(self._metric)
 
