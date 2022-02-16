@@ -193,12 +193,8 @@ class AntV2Sim(HabitatSim):
 
     def step(self, action):
         #cache the position before updating
-<<<<<<< HEAD
         self.step_physics(1.0 / self.ctrl_freq)
-=======
->>>>>>> 87e11a9c138e972babf532f64857243735cff649
         self.prev_robot_transformation = self.robot.base_transformation
-        self.step_physics(1.0 / 30.0)
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
 
