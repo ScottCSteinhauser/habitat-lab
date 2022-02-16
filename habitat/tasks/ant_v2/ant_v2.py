@@ -383,15 +383,19 @@ class JointStateError(VirtualMeasure):
         #print(self._metric)
 
 @registry.register_measure
-class UprightOrientationDeviationDelta(VirtualMeasure):
-    """The measure takes the dot product of the ant's orientation and the upward z vector. Uprightness is rewarded"""
-    cls_uuid: str = "UPRIGHT_ORIENTATION_DEVIATION_DELTA"
+class VectorAlignmentDelta(VirtualMeasure):
+    """The measure takes the dot product of the a vector in the ant's local space and a global vector."""
+    cls_uuid: str = "VECTOR_ALIGNMENT_DELTA"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #TODO: dynamic targets, for now just a rest pose
         self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        if config.UUID:
+            self.cls_uuid = config.UUID
+        self.local_vector = np.array(config.LOCAL_VECTOR)
+        self.global_vector = np.array(config.GLOBAL_VECTOR)
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -399,38 +403,16 @@ class UprightOrientationDeviationDelta(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-        
-        ant_up_vector = self._sim.robot.base_transformation.up
+        print(self.cls_uuid)
+        print(self.local_vector)
+        globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
+        prev_globalized_local_vector = self._sim.prev_robot_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
+        """ant_up_vector = self._sim.robot.base_transformation.up
         prev_ant_up_vector = self._sim.prev_robot_transformation.up
-        global_up_vector = mn.Vector3(0,1,0)
+        global_up_vector = mn.Vector3(0,1,0)"""
         
-        self._metric = np.dot(ant_up_vector, global_up_vector) - np.dot(prev_ant_up_vector, global_up_vector)
-        #print(self._metric)
-
-@registry.register_measure
-class ForwardOrientationDeviationDelta(VirtualMeasure):
-    """The measure takes the dot product of the ant's orientation and the upward z vector. Uprightness is rewarded"""
-    cls_uuid: str = "FORWARD_ORIENTATION_DEVIATION_DELTA"
-
-    def __init__(
-        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
-    ):
-        #TODO: dynamic targets, for now just a rest pose
-        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
-        super().__init__(sim, config, args)
-
-    def update_metric(
-        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
-    ):
-        if self._metric is None:
-            self._metric = None
-                
-        # assume the front of the ant is facing the +x direction
-        ant_forward_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
-        prev_ant_forward_vector = self._sim.prev_robot_transformation.transform_vector(mn.Vector3(1, 0, 0))
-        self._metric = np.dot(ant_forward_vector, self._sim.target_vector) - np.dot(prev_ant_forward_vector, self._sim.target_vector)
-        
-        #print(self._metric)
+        self._metric = np.dot(self.global_vector, globalized_local_vector) - np.dot(self.global_vector, prev_globalized_local_vector)
+        print(np.dot(self.global_vector, globalized_local_vector))
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):
