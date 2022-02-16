@@ -7,6 +7,7 @@
 import math
 from collections import defaultdict, OrderedDict
 from typing import Any, List, Optional, Tuple, Dict, Union
+import random
 
 import attr
 import numpy as np
@@ -81,7 +82,20 @@ class AntV2Sim(HabitatSim):
         self.robot = None
         
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
-        self.target_vector = np.array([1,0,0])
+        self.target_vector = None
+
+        if config.TARGET_VECTOR == "RANDOM":
+            #TODO Generate random vector
+            x, y = None, None
+            while True:
+                x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+                if math.sqrt(x**2 + y**2) > 1:
+                    continue
+                break
+            self.target_vector = np.array([x, 0, y])/np.linalg.norm(np.array([x, 0, y]))
+        else:
+            self.target_vector = np.array(config.TARGET_VECTOR)
+
         #used to measure root transformation delta for reward
         self.prev_robot_transformation = None
         
@@ -259,7 +273,7 @@ class AntObservationSpaceSensor(Sensor):
             
         if "EGOCENTRIC_TARGET_VECTOR" in self.config.ACTIVE_TERMS:
             # gives the target vector in local space (3D)
-            tv = self._sim.target_vector
+            tv = [float(x) for x in self._sim.target_vector]
             egocentric_target_vector = self._sim.robot.base_transformation.inverted().transform_vector(mn.Vector3(tv[0], tv[1], tv[2]))
             obs_terms.extend([x for x in list(egocentric_target_vector)])
             
@@ -364,16 +378,16 @@ class VectorRootDelta(VirtualMeasure):
 
 
 @registry.register_measure
-class VelocityTarget(VirtualMeasure):
-    """Measures the agent's root velocity along a target vector."""
+class VelocityAlignment(VirtualMeasure):
+    """Measures the agent's root velocity alignment along a target vector."""
 
-    cls_uuid: str = "VELOCITY_TARGET"
+    cls_uuid: str = "VELOCITY_ALIGNMENT"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.vector = sim.target_vector
+        self.target_vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -381,19 +395,35 @@ class VelocityTarget(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
-        velocity = self._sim.robot.base_velocity
+        ant_velocity_vector = self._sim.robot.base_velocity / np.linalg.norm(self._sim.robot.base_velocity)
         
-        # get dot product
-        dp = np.dot(velocity, self.vector)
-        
-        # normalize
-        dp /= np.linalg.norm(self.vector)
-        
-        dp = 1 - abs(dp - 1)
-        dp = np.clip(dp, 0, 1)
-        
-        self._metric = dp
+        # we have two normalized vectors, metric is just the dot product
+        alignment = np.dot(ant_velocity_vector, self.target_vector)
+        self._metric = alignment
 
+@registry.register_measure
+class SpeedTarget(VirtualMeasure):
+    """Measures the agent's speed compared with a target speed."""
+
+    cls_uuid: str = "SPEED_TARGET"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        self.target_speed = sim.target_vector
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None or self._sim.prev_robot_transformation is None:
+            self._metric = None
+        ant_speed = np.linalg.norm(self._sim.robot.base_velocity)
+        
+        # we have two normalized vectors, metric is just the dot product
+        similarity_score = 1 - abs(ant_speed / self.target_speed - 1)
+        self._metric = similarity_score
 
 @registry.register_measure
 class JointStateError(VirtualMeasure):

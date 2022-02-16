@@ -155,12 +155,12 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 30 ENVIRONMENT.MAX_EPISODE_STEPS 150 TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.1\"",
         "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
     },
-    #NOTE: Testing velocity measure on different target velocities
-    "velocity_x_low_clip_":{
-        "description": "Try 15hz action control.",
+    #NOTE: Testing orientation alignment
+    "ant_orientation":{
+        "description": "Try teaching the ant to orient with a constant vector.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
-        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 15\"",
-        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+        "task_overrides": " \"TASK.MEASUREMENTS [UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA,COMPOSITE_ANT_REWARD] SIMULATOR.TARGET_VECTOR [-0.6,0.0,0.8] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,2.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
     },
     
 }
