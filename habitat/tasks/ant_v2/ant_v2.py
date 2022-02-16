@@ -382,7 +382,6 @@ class VelocityTarget(VirtualMeasure):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         velocity = self._sim.robot.base_velocity
-        print(velocity)
         
         # get dot product
         dp = np.dot(velocity, self.vector)
@@ -391,11 +390,9 @@ class VelocityTarget(VirtualMeasure):
         dp /= np.linalg.norm(self.vector)
         
         dp = 1 - abs(dp - 1)
-        dp = np.clip(dp, -1, 1)
+        dp = np.clip(dp, 0, 1)
         
         self._metric = dp
-        print(dp)
-
 
 
 @registry.register_measure

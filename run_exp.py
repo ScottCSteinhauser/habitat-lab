@@ -129,6 +129,40 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_PRODUCT_ERROR,JOINT_STATE_ERROR] TASK.JOINT_STATE_ERROR.NORMALIZED True\"",
         "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
+    #NOTE: New measures - Vector alignment (orientation), Velocity Target (movement)
+    #NOTE: (02/16) Experiments for determining best control frequency
+    "delta_x_low_clip_10hz":{
+        "description": "Try 10hz action control.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 10 ENVIRONMENT.MAX_EPISODE_STEPS 50 TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.3\"",
+        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+    },
+    "delta_x_low_clip_15hz":{
+        "description": "Try 15hz action control.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 15 ENVIRONMENT.MAX_EPISODE_STEPS 75 TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.2\"",
+        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+    },
+    "delta_x_low_clip_20hz":{
+        "description": "Try 20hz action control.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 20 ENVIRONMENT.MAX_EPISODE_STEPS 100 TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.15\"",
+        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+    },
+    "delta_x_low_clip_30hz":{
+        "description": "Try 30hz action control.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 30 ENVIRONMENT.MAX_EPISODE_STEPS 150 TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.1\"",
+        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+    },
+    #NOTE: Testing velocity measure on different target velocities
+    "velocity_x_low_clip_":{
+        "description": "Try 15hz action control.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VECTOR_ROOT_DELTA,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_DELTA,FORWARD_ORIENTATION_DEVIATION_DELTA] SIMULATOR.CTRL_FREQ 15\"",
+        "overrides": " RL.SUCCESS_MEASURE VECTOR_ROOT_DELTA RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1",
+    },
+    
 }
 
 
