@@ -67,6 +67,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
     #NOTE: joint error hyper-parameter options round 2 (02/14)
+<<<<<<< HEAD
     "joint_error_ant_high_learning_rate_decay":{
         "description": "Linear penalty for target joint angle error.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
@@ -129,6 +130,19 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_PRODUCT_ERROR,JOINT_STATE_ERROR] TASK.JOINT_STATE_ERROR.NORMALIZED True\"",
         "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
+=======
+    "delta_x_high_lr_low_clip":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
+    "delta_x_high_lr_low_clip_10hz_action":{
+        "description": "Linear penalty for target joint angle error.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "overrides": " RL.REWARD_MEASURE VECTOR_ROOT_DELTA RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
+    
+>>>>>>> 87e11a9c138e972babf532f64857243735cff649
 }
 
 

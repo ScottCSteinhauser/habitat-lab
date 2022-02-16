@@ -193,7 +193,10 @@ class AntV2Sim(HabitatSim):
 
     def step(self, action):
         #cache the position before updating
+<<<<<<< HEAD
         self.step_physics(1.0 / self.ctrl_freq)
+=======
+>>>>>>> 87e11a9c138e972babf532f64857243735cff649
         self.prev_robot_transformation = self.robot.base_transformation
         self.step_physics(1.0 / 30.0)
         if self.is_eval:
@@ -213,7 +216,9 @@ class AntV2Sim(HabitatSim):
             
             # draw ant's orientation vector
             self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), self.robot.base_transformation.up)
-
+            # draw ant's forward directional vector
+            ant_forward_vector = self.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), mn.Vector3(self.robot.base_pos) + ant_forward_vector)
 
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
