@@ -80,7 +80,7 @@ class AntV2Sim(HabitatSim):
         self.enable_physics = True
         self.robot = None
         
-        # The direction we want the ant to progress in.
+        # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = np.array([1,0,0])
         #used to measure root transformation delta for reward
         self.prev_robot_transformation = None
@@ -361,6 +361,42 @@ class VectorRootDelta(VirtualMeasure):
         #v is unit, so magnitude reduces to displacement.dot(v)
         displacement = self._sim.robot.base_pos - self._sim.prev_robot_transformation.translation
         self._metric = np.dot(displacement, self.vector)
+
+
+@registry.register_measure
+class VelocityTarget(VirtualMeasure):
+    """Measures the agent's root velocity along a target vector."""
+
+    cls_uuid: str = "VELOCITY_TARGET"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        self.vector = sim.target_vector
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None or self._sim.prev_robot_transformation is None:
+            self._metric = None
+        velocity = self._sim.robot.base_velocity
+        print(velocity)
+        
+        # get dot product
+        dp = np.dot(velocity, self.vector)
+        
+        # normalize
+        dp /= np.linalg.norm(self.vector)
+        
+        dp = 1 - abs(dp - 1)
+        dp = np.clip(dp, -1, 1)
+        
+        self._metric = dp
+        print(dp)
+
+
 
 @registry.register_measure
 class JointStateError(VirtualMeasure):
