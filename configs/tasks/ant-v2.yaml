@@ -54,6 +54,10 @@ TASK:
       SIZE: 3
     BASE_QUATERNION:
       SIZE: 4
+    EGOCENTRIC_TARGET_VECTOR:
+      SIZE: 3
+    EGOCENTRIC_UPWARDS_VECTOR:
+      SIZE: 3
     BASE_LIN_VEL:
       SIZE: 3
     BASE_ANG_VEL:
@@ -69,7 +73,7 @@ TASK:
       POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
     #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
     #NOTE: list active terms here:
-    ACTIVE_TERMS: ["JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
+    ACTIVE_TERMS: ["EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
 
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 

@@ -256,6 +256,18 @@ class AntObservationSpaceSensor(Sensor):
             # base orientation (4D) - quaternion
             obs_terms.extend([x for x in list(self._sim.robot.base_rot.vector)])
             obs_terms.extend([self._sim.robot.base_rot.scalar])
+            
+        if "EGOCENTRIC_TARGET_VECTOR" in self.config.ACTIVE_TERMS:
+            # gives the target vector in local space (3D)
+            tv = self._sim.target_vector
+            egocentric_target_vector = self._sim.robot.base_transformation.inverted().transform_vector(mn.Vector3(tv[0], tv[1], tv[2]))
+            obs_terms.extend([x for x in list(egocentric_target_vector)])
+            
+        if "EGOCENTRIC_UPWARDS_VECTOR" in self.config.ACTIVE_TERMS:
+            # gives the global up vector (0,1,0) in local space (3D)
+            uv = mn.Vector3(0,1,0)
+            egocentric_upwards_vector = self._sim.robot.base_transformation.inverted().transform_vector(uv)
+            obs_terms.extend([x for x in list(egocentric_upwards_vector)])
 
         if "BASE_LIN_VEL" in self.config.ACTIVE_TERMS:
             # base linear velocity (3D)
@@ -439,16 +451,11 @@ class VectorAlignmentDelta(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-        print(self.cls_uuid)
-        print(self.local_vector)
+
         globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
         prev_globalized_local_vector = self._sim.prev_robot_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
-        """ant_up_vector = self._sim.robot.base_transformation.up
-        prev_ant_up_vector = self._sim.prev_robot_transformation.up
-        global_up_vector = mn.Vector3(0,1,0)"""
         
         self._metric = np.dot(self.global_vector, globalized_local_vector) - np.dot(self.global_vector, prev_globalized_local_vector)
-        print(np.dot(self.global_vector, globalized_local_vector))
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):
