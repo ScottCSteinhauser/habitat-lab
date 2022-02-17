@@ -84,6 +84,7 @@ class AntV2Sim(HabitatSim):
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
         self.target_speed = config.TARGET_SPEED
+        self.ant_rotation = config.ANT_START_ROTATION # can be a float or string "Random" indicating a random initialization each time
 
         if config.TARGET_VECTOR == "RANDOM":
             #TODO Generate random vector
@@ -168,7 +169,11 @@ class AntV2Sim(HabitatSim):
             self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
             )
-            self.robot.base_rot = math.pi / 2
+            if self.ant_rotation == "RANDOM":
+                self.robot.base_rot = random.uniform(-1*math.pi, math.pi)
+            else:
+                self.robot.base_rot = self.ant_rotation
+                
             self.prev_robot_transformation = self.robot.base_transformation
 
             # add floor
@@ -203,7 +208,10 @@ class AntV2Sim(HabitatSim):
             self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
             )
-            self.robot.base_rot = math.pi / 2
+            if self.ant_rotation == "RANDOM":
+                self.robot.base_rot = random.uniform(-1*math.pi, math.pi)
+            else:
+                self.robot.base_rot = self.ant_rotation
             self.prev_robot_transformation = self.robot.base_transformation
 
     def step(self, action):
@@ -509,9 +517,9 @@ class JointStateProductError(VirtualMeasure):
         #print(self._metric)
 
 @registry.register_measure
-class VectorAlignmentDelta(VirtualMeasure):
+class VectorAlignmentValue(VirtualMeasure):
     """The measure takes the dot product of the a vector in the ant's local space and a global vector."""
-    cls_uuid: str = "VECTOR_ALIGNMENT_DELTA"
+    cls_uuid: str = "VECTOR_ALIGNMENT_VALUE"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
@@ -529,11 +537,11 @@ class VectorAlignmentDelta(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
-
+            
         globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
-        prev_globalized_local_vector = self._sim.prev_robot_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
         
-        self._metric = np.dot(self.global_vector, globalized_local_vector) - np.dot(self.global_vector, prev_globalized_local_vector)
+        self._metric = np.dot(self.global_vector, globalized_local_vector)
+        print(self._metric)
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):
