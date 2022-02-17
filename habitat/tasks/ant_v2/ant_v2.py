@@ -97,7 +97,7 @@ class AntV2Sim(HabitatSim):
             self.target_vector = np.array([x, 0, y])/np.linalg.norm(np.array([x, 0, y]))
         else:
             self.target_vector = np.array(config.TARGET_VECTOR)
-
+        self.target_vector = np.array([float(x) for x in self.target_vector])
         #used to measure root transformation delta for reward
         self.prev_robot_transformation = None
         
@@ -237,7 +237,10 @@ class AntV2Sim(HabitatSim):
             self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), self.robot.base_transformation.up)
             # draw ant's forward directional vector
             ant_forward_vector = self.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
-            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), mn.Vector3(self.robot.base_pos) + ant_forward_vector)
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), ant_forward_vector)
+            # draw ant's target vector
+            tv = mn.Vector3(self.target_vector[0], self.target_vector[1], self.target_vector[2])
+            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), tv, mn.Color4(0.3, 1.0, 0.3, 1.0))
 
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
@@ -416,11 +419,15 @@ class VelocityAlignment(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
-        ant_velocity_vector = self._sim.robot.base_velocity / np.linalg.norm(self._sim.robot.base_velocity)
+        # ignore y component of ant's velocity
+        ant_velocity = self._sim.robot.base_velocity
+        ant_velocity[1] = 0
+        ant_velocity_unit_vector = ant_velocity / np.linalg.norm(ant_velocity)
         
         # we have two normalized vectors, metric is just the dot product
-        alignment = np.dot(ant_velocity_vector, self.target_vector)
+        alignment = np.dot(ant_velocity_unit_vector, self.target_vector)
         self._metric = alignment
+        # print("alignment:", ant_velocity_unit_vector, self._metric)
 
 @registry.register_measure
 class SpeedTarget(VirtualMeasure):
@@ -441,12 +448,16 @@ class SpeedTarget(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
+        # ignore y component of ant's velocity
+        ant_velocity = self._sim.robot.base_velocity
+        ant_velocity[1] = 0
         # target vector should be normalized
-        ant_velocity_in_target_direction = np.dot(self._sim.robot.base_velocity, self.target_vector)
+        ant_velocity_in_target_direction = np.dot(ant_velocity, self.target_vector)
         
         # we have two normalized vectors, metric is just the dot product
         similarity_score = 1 - abs(ant_velocity_in_target_direction / self.target_speed - 1)
         self._metric = similarity_score
+        # print("speed:", ant_velocity_in_target_direction, self._metric)
 
 @registry.register_measure
 class JointStateError(VirtualMeasure):
@@ -529,7 +540,12 @@ class VectorAlignmentValue(VirtualMeasure):
         if config.UUID:
             self.cls_uuid = config.UUID
         self.local_vector = np.array(config.LOCAL_VECTOR)
-        self.global_vector = np.array(config.GLOBAL_VECTOR)
+        if config.GLOBAL_VECTOR == "TARGET":
+            self.global_vector = sim.target_vector
+        else:
+            self.global_vector = np.array(config.GLOBAL_VECTOR)
+        self.local_vector = np.array([float(x) for x in self.local_vector])
+        self.global_vector = np.array([float(x) for x in self.global_vector])
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -539,9 +555,9 @@ class VectorAlignmentValue(VirtualMeasure):
             self._metric = None
             
         globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
-        
-        self._metric = np.dot(self.global_vector, globalized_local_vector)
-        print(self._metric)
+        alignment = np.dot(self.global_vector, globalized_local_vector)
+        self._metric = alignment
+        # print(self._metric)
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):

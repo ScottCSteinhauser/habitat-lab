@@ -35,9 +35,9 @@ def periodic_leg_motion_at(time):
     for hip_ix in hip_ixs:
         joint_state[hip_ix] = math.sin(4*math.pi*time)
     for ankle_ix in ankle_ixs_1:
-        joint_state[ankle_ix] = 0 # math.sin(math.pi + 4*math.pi*time) / 2 - 1
+        joint_state[ankle_ix] = -1
     for ankle_ix in ankle_ixs_2:
-        joint_state[ankle_ix] = 1 #* math.sin(2*math.pi*time /2 + 0.5)
+        joint_state[ankle_ix] = 1
 
     # Simple swim-like walking pattern for ant
     joint_state[0] = -1 * (math.sin(2*math.pi*time))
