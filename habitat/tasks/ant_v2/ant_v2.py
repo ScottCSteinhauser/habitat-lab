@@ -83,6 +83,7 @@ class AntV2Sim(HabitatSim):
         
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
+        self.target_speed = config.TARGET_SPEED
 
         if config.TARGET_VECTOR == "RANDOM":
             #TODO Generate random vector
@@ -286,10 +287,22 @@ class AntObservationSpaceSensor(Sensor):
         if "BASE_LIN_VEL" in self.config.ACTIVE_TERMS:
             # base linear velocity (3D)
             obs_terms.extend([x for x in list(self._sim.robot.base_velocity)])
+        
+        if "EGOCENTRIC_BASE_LIN_VEL" in self.config.ACTIVE_TERMS:
+            # base linear velocity (3D)
+            bv = self._sim.robot.base_velocity
+            egocentric_base_lin_vel = self._sim.robot.base_transformation.inverted().transform_vector(bv)
+            obs_terms.extend([x for x in list(egocentric_base_lin_vel)])
 
         if "BASE_ANG_VEL" in self.config.ACTIVE_TERMS:
             # base angular velocity (3D)
             obs_terms.extend([x for x in list(self._sim.robot.base_angular_velocity)])
+
+        if "EGOCENTRIC_BASE_ANG_VEL" in self.config.ACTIVE_TERMS:
+            # base linear velocity (3D)
+            bv = self._sim.robot.base_angular_velocity
+            egocentric_base_ang_vel = self._sim.robot.base_transformation.inverted().transform_vector(bv)
+            obs_terms.extend([x for x in list(egocentric_base_ang_vel)])
 
         if "JOINT_VEL" in self.config.ACTIVE_TERMS:
             # ant joint velocity (8D)
@@ -403,7 +416,7 @@ class VelocityAlignment(VirtualMeasure):
 
 @registry.register_measure
 class SpeedTarget(VirtualMeasure):
-    """Measures the agent's speed compared with a target speed."""
+    """Measures the agent's velocity in the target vector's direction."""
 
     cls_uuid: str = "SPEED_TARGET"
 
@@ -411,7 +424,8 @@ class SpeedTarget(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.target_speed = sim.target_vector
+        self.target_vector = sim.target_vector
+        self.target_speed = sim.target_speed
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -419,10 +433,11 @@ class SpeedTarget(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
-        ant_speed = np.linalg.norm(self._sim.robot.base_velocity)
+        # target vector should be normalized
+        ant_velocity_in_target_direction = np.dot(self._sim.robot.base_velocity, self.target_vector)
         
         # we have two normalized vectors, metric is just the dot product
-        similarity_score = 1 - abs(ant_speed / self.target_speed - 1)
+        similarity_score = 1 - abs(ant_velocity_in_target_direction / self.target_speed - 1)
         self._metric = similarity_score
 
 @registry.register_measure

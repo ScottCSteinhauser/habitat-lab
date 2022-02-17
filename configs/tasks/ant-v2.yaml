@@ -64,7 +64,11 @@ TASK:
       SIZE: 3
     BASE_LIN_VEL:
       SIZE: 3
+    EGOCENTRIC_BASE_LIN_VEL:
+      SIZE: 3
     BASE_ANG_VEL:
+      SIZE: 3
+    EGOCENTRIC_BASE_ANG_VEL:
       SIZE: 3
     JOINT_POS:
       SIZE: 8
@@ -72,12 +76,12 @@ TASK:
       SIZE: 8
     JOINT_VEL:
       SIZE: 8
-    JOINT_TARGET:
+    JOINT_TARGET: # Sets a target pose for the ant; relevant when rewarding the ant for closeness to this pose
       SIZE: 8
       POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
     #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
     #NOTE: list active terms here:
-    ACTIVE_TERMS: ["EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
+    ACTIVE_TERMS: ["EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
 
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 
