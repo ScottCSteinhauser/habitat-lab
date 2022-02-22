@@ -81,6 +81,16 @@ class AntV2Sim(HabitatSim):
         self.enable_physics = True
         self.robot = None
         
+        # The leg target state for the ant
+        self.leg_target_state = None
+        
+        if config.LEG_TARGET_STATE == "RANDOM":
+            self.leg_target_state = np.random.rand(8) * 2 - 1
+        else:
+            self.leg_target_state = np.array(config.LEG_TARGET_STATE)
+        self.leg_target_state = np.array([float(x) for x in self.leg_target_state])
+        
+        print(self.leg_target_state)
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
         self.target_speed = config.TARGET_SPEED
@@ -98,6 +108,10 @@ class AntV2Sim(HabitatSim):
         else:
             self.target_vector = np.array(config.TARGET_VECTOR)
         self.target_vector = np.array([float(x) for x in self.target_vector])
+        
+        
+        
+        
         #used to measure root transformation delta for reward
         self.prev_robot_transformation = None
         
@@ -331,7 +345,7 @@ class AntObservationSpaceSensor(Sensor):
 
         if "JOINT_TARGET" in self.config.ACTIVE_TERMS:
             # joint state rest position target (8D) (for joint error reward)
-            obs_terms.extend([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+            obs_terms.extend([x for x in list(self._sim.leg_target_state)])
 
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
 
@@ -470,7 +484,7 @@ class JointStateError(VirtualMeasure):
     ):
         self._normalized = False if not config.NORMALIZED else config.NORMALIZED
         #TODO: dynamic targets, for now just a rest pose
-        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        self.target_state = sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
         #NOTE: computed first time (scalar)
         self.joint_norm_scale = None
         super().__init__(sim, config, args)
@@ -492,7 +506,7 @@ class JointStateError(VirtualMeasure):
             self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
         else:
             self._metric = -np.linalg.norm(current_state - self.target_state)
-        #print(self._metric)
+        print(self._metric)
 
 @registry.register_measure
 class JointStateProductError(VirtualMeasure):

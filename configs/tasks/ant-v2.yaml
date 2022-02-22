@@ -27,11 +27,13 @@ SIMULATOR:
         MIN_DEPTH: 0.0
         MAX_DEPTH: 10.0
         NORMALIZE_DEPTH: True
-  LEG_REST: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # not being used at the moment
   ROBOT_URDF: data/robots/ant.urdf
   
   #NOTE: control frequency in Hz. Physics stepped at 1/CTRL_FREQ
   CTRL_FREQ: 30
+
+  # LEG TARGET
+  LEG_TARGET_STATE: "RANDOM" #[0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
 
   #Target vector for the ant to progress towards, vector must be normalized
   TARGET_VECTOR: [-1.0, 0.0, 0.0]
