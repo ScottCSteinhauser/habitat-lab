@@ -90,21 +90,14 @@ class AntV2Sim(HabitatSim):
             self.leg_target_state = np.array(config.LEG_TARGET_STATE)
         self.leg_target_state = np.array([float(x) for x in self.leg_target_state])
         
-        print(self.leg_target_state)
+        
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
         self.target_speed = config.TARGET_SPEED
         self.ant_rotation = config.ANT_START_ROTATION # can be a float or string "Random" indicating a random initialization each time
 
         if config.TARGET_VECTOR == "RANDOM":
-            #TODO Generate random vector
-            x, y = None, None
-            while True:
-                x, y = random.uniform(-1, 1), random.uniform(-1, 1)
-                if math.sqrt(x**2 + y**2) > 1:
-                    continue
-                break
-            self.target_vector = np.array([x, 0, y])/np.linalg.norm(np.array([x, 0, y]))
+            self.generate_random_target_vector()
         else:
             self.target_vector = np.array(config.TARGET_VECTOR)
         self.target_vector = np.array([float(x) for x in self.target_vector])
@@ -141,6 +134,15 @@ class AntV2Sim(HabitatSim):
         #print(f"self.concur_render = {self.concur_render}")
 
         self.debug_visualizer = AntV2SimDebugVisualizer(self)
+
+    def generate_random_target_vector(self):
+        x, y = None, None
+        while True:
+            x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+            if math.sqrt(x**2 + y**2) > 1:
+                continue
+            break
+        self.target_vector = np.array([x, 0, y])/np.linalg.norm(np.array([x, 0, y]))
 
     def _try_acquire_context(self):
         # Is this relevant?
@@ -222,10 +224,13 @@ class AntV2Sim(HabitatSim):
             self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
             )
-            if self.ant_rotation == "RANDOM":
-                self.robot.base_rot = random.uniform(-1*math.pi, math.pi)
-            else:
-                self.robot.base_rot = self.ant_rotation
+            
+            if config.LEG_TARGET_STATE == "RANDOM":
+                self.leg_target_state = np.random.rand(8) * 2 - 1
+            
+            if config.TARGET_VECTOR == "RANDOM":
+                self.generate_random_target_vector()
+                
             self.prev_robot_transformation = self.robot.base_transformation
 
     def step(self, action):
@@ -506,7 +511,7 @@ class JointStateError(VirtualMeasure):
             self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
         else:
             self._metric = -np.linalg.norm(current_state - self.target_state)
-        print(self._metric)
+        # print(self._metric)
 
 @registry.register_measure
 class JointStateProductError(VirtualMeasure):
