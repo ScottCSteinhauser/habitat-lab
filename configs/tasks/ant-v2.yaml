@@ -34,7 +34,7 @@ SIMULATOR:
   CTRL_FREQ: 30
 
   #Target vector for the ant to progress towards, vector must be normalized
-  TARGET_VECTOR: [1.0, 0.0, 0.0]
+  TARGET_VECTOR: [-1.0, 0.0, 0.0]
   ANT_START_ROTATION: 1.57 # Does not work properly
   TARGET_SPEED: 1
 
@@ -136,7 +136,7 @@ TASK:
       LEG_JOINT_DIMENSIONALITY: 4
       DELTA_POS_LIMIT: 0.1
   POSSIBLE_ACTIONS:
-    - LEG_ACTION
+    - LEG_ACTION_SYMMETRICAL
 
 DATASET:
   TYPE: AntV2Dataset-v0

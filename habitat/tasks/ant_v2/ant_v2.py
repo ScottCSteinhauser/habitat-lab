@@ -229,7 +229,7 @@ class AntV2Sim(HabitatSim):
     def debug_draw(self):
         if self.is_eval:
             #draw some debug line visualizations
-            self.debug_visualizer.draw_axis()
+            #self.debug_visualizer.draw_axis()
             if len(self.robot_root_path) > 1:
                 self.debug_visualizer.draw_path(self.robot_root_path)
             

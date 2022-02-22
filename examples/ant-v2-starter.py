@@ -14,7 +14,7 @@ import habitat_sim
 from habitat_sim.utils import viz_utils as vut
 
 # import quadruped_wrapper
-from habitat_sim.robots import AntV2Robot
+from habitat.tasks.ant_v2.ant_robot import AntV2Robot
 
 repo = git.Repo(".", search_parent_directories=True)
 dir_path = repo.working_tree_dir
@@ -34,7 +34,7 @@ def place_agent(sim):
 def make_configuration():
     # simulator configuration
     backend_cfg = habitat_sim.SimulatorConfiguration()
-    backend_cfg.scene_id = "NONE"
+    backend_cfg.scene_id = "data/replica_cad/stages/Stage_v3_sc0_staging.glb"
 
     backend_cfg.enable_physics = True
 
@@ -48,8 +48,8 @@ def make_configuration():
     rgba_camera_1stperson_spec.uuid = "rgba_camera_1stperson"
     rgba_camera_1stperson_spec.sensor_type = habitat_sim.SensorType.COLOR
     rgba_camera_1stperson_spec.resolution = camera_resolution
-    rgba_camera_1stperson_spec.position = [0.0, 0.6, 0.0]
-    rgba_camera_1stperson_spec.orientation = [0.0, 0.0, 0.0]
+    rgba_camera_1stperson_spec.position = [-3.0, 0, 0.0]
+    rgba_camera_1stperson_spec.orientation = [0.0, 0, 1.6]
     rgba_camera_1stperson_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
     sensor_specs.append(rgba_camera_1stperson_spec)
 
@@ -116,13 +116,15 @@ def example():
 
     ant = AntV2Robot(robot_path, sim)
     ant.reconfigure()
-    ant.base_pos = mn.Vector3(-3, 1.0, 0.2)
+    ant.base_pos = mn.Vector3(1, -.2, 0)
     ant.base_rot = math.pi / 2
 
     while True:
         #keystroke = cv2.waitKey(0)
         #if keystroke == 27:
         #    break
+        if count_steps == 100:
+            break
         
         sim.step_physics(1.0 / 60.0)
         observations.append(sim.get_sensor_observations())
