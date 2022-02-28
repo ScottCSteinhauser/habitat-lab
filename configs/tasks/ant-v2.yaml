@@ -33,10 +33,10 @@ SIMULATOR:
   CTRL_FREQ: 30
 
   # LEG TARGET
-  LEG_TARGET_STATE: "RANDOM" #[0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
+  LEG_TARGET_STATE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
 
   #Target vector for the ant to progress towards, vector must be normalized
-  TARGET_VECTOR: "RANDOM" #[-1.0, 0.0, 0.0]
+  TARGET_VECTOR: "RANDOM" #[1.0, 0.0, 0.0]
   ANT_START_ROTATION: 1.57 # Does not work properly
   TARGET_SPEED: 1
 
@@ -57,6 +57,8 @@ TASK:
   ANT_OBSERVATION_SPACE_SENSOR:
     TYPE: "AntObservationSpaceSensor"
     #list of possible terms to add and their parameters
+    PERIODIC_TIME:
+      SIZE: 1
     BASE_POSITION:
       SIZE: 3
     BASE_QUATERNION:
@@ -83,8 +85,10 @@ TASK:
       SIZE: 8
       POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
     #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
+    # may want ego centric locations of feet, contact information of feet (force or boolean), may want history 
     #NOTE: list active terms here:
-    ACTIVE_TERMS: ["EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"]
+    ACTIVE_TERMS: ["PERIODIC_TIME", "EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"] # need to update joint target, add history of actions
+    
 
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 
@@ -109,6 +113,8 @@ TASK:
     TYPE: "VelocityAlignment"
   SPEED_TARGET:
     TYPE: "SpeedTarget"
+  ORTHOGONAL_VELOCITY:
+    TYPE: "OrthogonalVelocity"
   COMPOSITE_ANT_REWARD:
     TYPE: "CompositeAntReward"
     #setting up the defaults here
@@ -124,7 +130,7 @@ TASK:
     UUID: "FORWARD_ORIENTATION_DEVIATION_VALUE"
     LOCAL_VECTOR: [1.0, 0.0, 0.0]
     GLOBAL_VECTOR: "TARGET"
-  MEASUREMENTS: ["X_LOCATION", "VELOCITY_ALIGNMENT", "SPEED_TARGET", "VECTOR_ROOT_DELTA", "JOINT_STATE_ERROR", "JOINT_STATE_MAX_ERROR", "ACTIVE_CONTACTS", "ACTION_COST", "UPRIGHT_ORIENTATION_DEVIATION_VALUE", "FORWARD_ORIENTATION_DEVIATION_VALUE", "COMPOSITE_ANT_REWARD"]
+  MEASUREMENTS: ["X_LOCATION", "VELOCITY_ALIGNMENT", "SPEED_TARGET", "VECTOR_ROOT_DELTA", "JOINT_STATE_ERROR", "JOINT_STATE_MAX_ERROR", "ACTIVE_CONTACTS", "ACTION_COST", "UPRIGHT_ORIENTATION_DEVIATION_VALUE", "FORWARD_ORIENTATION_DEVIATION_VALUE", "ORTHOGONAL_VELOCITY", "COMPOSITE_ANT_REWARD"]
 
   ACTIONS:
     LEG_ACTION:
@@ -132,13 +138,22 @@ TASK:
       LEG_CONTROLLER: "LegRelPosAction"
       LEG_JOINT_DIMENSIONALITY: 8
       DELTA_POS_LIMIT: 0.1
+    LEG_ACTION_ABS:
+      TYPE: "LegAction"
+      LEG_CONTROLLER: "LegAbsPosAction"
+      LEG_JOINT_DIMENSIONALITY: 8
     LEG_ACTION_SYMMETRICAL:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosActionSymmetrical"
       LEG_JOINT_DIMENSIONALITY: 4
       DELTA_POS_LIMIT: 0.1
+    LEG_ACTION_GAIT_DEVIATION:
+      TYPE: "LegAction"
+      LEG_CONTROLLER: "LegRelPosActionGaitDeviation"
+      LEG_JOINT_DIMENSIONALITY: 8
+      DELTA_POS_LIMIT: 0.3
   POSSIBLE_ACTIONS:
-    - LEG_ACTION
+    - LEG_ACTION_GAIT_DEVIATION
 
 DATASET:
   TYPE: AntV2Dataset-v0

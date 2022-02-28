@@ -213,6 +213,37 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \"TASK.MEASUREMENTS [JOINT_STATE_PRODUCT_ERROR,JOINT_STATE_ERROR] TASK.JOINT_STATE_ERROR.NORMALIZED True SIMULATOR.LEG_TARGET_STATE \"RANDOM\"\"",
         "overrides": " RL.SUCCESS_MEASURE JOINT_STATE_ERROR RL.REWARD_MEASURE JOINT_STATE_ERROR RL.PPO.clip_param 0.1",
     },
+    
+    # Implemented a baseline ant gait, action controller is deviation from this gait
+    # Now we want to optimize this gait to maximize smoothness
+    "ant_gait_optimization_v1":{
+        "description": "Optimizing ant gait.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VELOCITY_ALIGNMENT,ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST,COMPOSITE_ANT_REWARD] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [VELOCITY_ALIGNMENT,ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,1.0,1.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+    },
+    "ant_gait_optimization_v2":{
+        "description": "Optimizing ant gait.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VELOCITY_ALIGNMENT,ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST,COMPOSITE_ANT_REWARD] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+    },
+    # Now adding periodic time as an observation
+    "ant_gait_optimization_v3":{
+        "description": "Optimizing ant gait.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [VELOCITY_ALIGNMENT,ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST,COMPOSITE_ANT_REWARD] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [VELOCITY_ALIGNMENT,ORTHOGONAL_VELOCITY,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [3.0,3.0,1.0,1.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+    },
+    # Now aiming for a target orientation
+    "ant_orientation_alignment__withgait_v1":{
+        "description": "Try teaching the ant to orient with a variable vector.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,COMPOSITE_ANT_REWARD] TASK.JOINT_STATE_ERROR.NORMALIZED True SIMULATOR.TARGET_VECTOR \"RANDOM\" TASK.COMPOSITE_ANT_REWARD.COMPONENTS [UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [2.0,2.0,1.0]\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1 RL.PPO.lr 3e-4",
+    },
+    # Now adding 
+    
 }
 
 

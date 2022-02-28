@@ -114,6 +114,7 @@ class AntV2Sim(HabitatSim):
         #the control rate in Hz. Simulator is stepped at 1.0/ctrl_freq.
         #NOTE: should be balanced with ENVIRONMENT.MAX_EPISODE_STEPS and RL.PPO.num_steps
         self.ctrl_freq = agent_config.CTRL_FREQ
+        self.elapsed_steps = None
         
         self.load_obstacles = False
         # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
@@ -224,6 +225,7 @@ class AntV2Sim(HabitatSim):
             self.robot.base_pos = mn.Vector3(
                 self.habitat_config.AGENT_0.START_POSITION
             )
+            self.robot.base_rot = self.ant_rotation
             
             if config.LEG_TARGET_STATE == "RANDOM":
                 self.leg_target_state = np.random.rand(8) * 2 - 1
@@ -232,6 +234,7 @@ class AntV2Sim(HabitatSim):
                 self.generate_random_target_vector()
                 
             self.prev_robot_transformation = self.robot.base_transformation
+        self.elapsed_steps = 0
 
     def step(self, action):
         #cache the position before updating
@@ -243,6 +246,7 @@ class AntV2Sim(HabitatSim):
         # returns new observation after step
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)
+        self.elapsed_steps += 1
         return obs
 
     def debug_draw(self):
@@ -292,6 +296,9 @@ class AntObservationSpaceSensor(Sensor):
         self, observations, episode, *args: Any, **kwargs: Any
     ):
         obs_terms = []
+        
+        if "PERIODIC_TIME" in self.config.ACTIVE_TERMS:
+            obs_terms.extend([math.fmod(self._sim.get_world_time(), 1.0)])
 
         if "BASE_POS" in self.config.ACTIVE_TERMS:
             # base position (3D)
@@ -328,7 +335,7 @@ class AntObservationSpaceSensor(Sensor):
             # base angular velocity (3D)
             obs_terms.extend([x for x in list(self._sim.robot.base_angular_velocity)])
 
-        if "EGOCENTRIC_BASE_ANG_VEL" in self.config.ACTIVE_TERMS:
+        if "EGOCENTRIC_BASE_ANG_VEL" in self.config.ACTIVE_TERMS: # might be not working
             # base linear velocity (3D)
             bv = self._sim.robot.base_angular_velocity
             egocentric_base_ang_vel = self._sim.robot.base_transformation.inverted().transform_vector(bv)
@@ -438,15 +445,38 @@ class VelocityAlignment(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
-        # ignore y component of ant's velocity
         ant_velocity = self._sim.robot.base_velocity
-        ant_velocity[1] = 0
         ant_velocity_unit_vector = ant_velocity / np.linalg.norm(ant_velocity)
         
         # we have two normalized vectors, metric is just the dot product
         alignment = np.dot(ant_velocity_unit_vector, self.target_vector)
         self._metric = alignment
-        # print("alignment:", ant_velocity_unit_vector, self._metric)
+        #print("vel alignment:", self._metric)
+
+@registry.register_measure
+class OrthogonalVelocity(VirtualMeasure):
+    """Measures the agent's root velocity alignment orthogonal a target vector."""
+
+    cls_uuid: str = "ORTHOGONAL_VELOCITY"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        self.target_vector = sim.target_vector
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None or self._sim.prev_robot_transformation is None:
+            self._metric = None
+
+        ant_velocity = self._sim.robot.base_velocity
+        orthogonal_velocity = ant_velocity - np.dot(ant_velocity, self.target_vector) * self.target_vector
+        
+        self._metric = -np.linalg.norm(orthogonal_velocity)
+        #print("orthogonal component:", self._metric)
 
 @registry.register_measure
 class SpeedTarget(VirtualMeasure):
@@ -467,9 +497,7 @@ class SpeedTarget(VirtualMeasure):
     ):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
-        # ignore y component of ant's velocity
         ant_velocity = self._sim.robot.base_velocity
-        ant_velocity[1] = 0
         # target vector should be normalized
         ant_velocity_in_target_direction = np.dot(ant_velocity, self.target_vector)
         
@@ -576,7 +604,7 @@ class VectorAlignmentValue(VirtualMeasure):
         globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
         alignment = np.dot(self.global_vector, globalized_local_vector)
         self._metric = alignment
-        # print(self._metric)
+        #print("vector_alignment:",self._metric)
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):
@@ -644,10 +672,14 @@ class ActionCost(VirtualMeasure):
     ):
         if self._metric is None:
             self._metric = None
+        total_reward = 1
+        # most_recent_action values are between -1 and 1, 0 is low cost action
+        for x in self._sim.most_recent_action:
+            total_reward *= 1 - abs(x)
         #magnitude of the action vector rather than sum of squares.
-        self._metric = -np.linalg.norm(self._sim.most_recent_action)
+        self._metric = total_reward
         #self._metric = -np.sum(np.square(self._sim.most_recent_action))
-        #print(self._metric)
+        #print("cost",self._metric)
 
 @registry.register_measure
 class CompositeAntReward(VirtualMeasure):
@@ -725,12 +757,45 @@ class LegRelPosAction(SimulatorTaskAction):
         delta_pos *= self._config.DELTA_POS_LIMIT
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
+        print("new", delta_pos + self._sim.robot.leg_joint_pos)
+
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
         
         # record the action for use in the ActionCost measure
         self._sim.most_recent_action = delta_pos
+        print("actual",self._sim.robot.leg_joint_pos)
+        return None
+
+@registry.register_task_action
+class LegAbsPosAction(SimulatorTaskAction):
+    """
+    The leg motor targets are specified by the
+    action
+    """
+
+    @property
+    def action_space(self):
+        return spaces.Box(
+            shape=(self._config.LEG_JOINT_DIMENSIONALITY,),
+            low=-1,
+            high=1,
+            dtype=np.float32,
+        )
+
+    def step(self, pos, should_step=True, *args, **kwargs):
+        # clip from -1 to 1
+        pos = np.clip(pos, -1, 1)
+
+        self._sim: AntV2Sim
+        #clip the motor targets to the joint range
+        self._sim.robot.leg_joint_pos = np.clip(pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        if should_step:
+            return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        # record the action for use in the ActionCost measure
+        self._sim.most_recent_action = pos
         return None
 
 
@@ -773,6 +838,61 @@ class LegRelPosActionSymmetrical(SimulatorTaskAction):
         
         # record the action for use in the ActionCost measure
         self._sim.most_recent_action = delta_pos
+        return None
+
+@registry.register_task_action
+class LegRelPosActionGaitDeviation(SimulatorTaskAction):
+    """
+    The ant walks in a sunisoidal walking motion by default, action is the deviation in joint positions from that.
+    """
+
+    @property
+    def action_space(self):
+        return spaces.Box(
+            shape=(self._config.LEG_JOINT_DIMENSIONALITY,),
+            low=-1,
+            high=1,
+            dtype=np.float32,
+        )
+
+    def periodic_leg_motion_at(self, time, ankle_amplitude, ankle_period_offset, leg_amplitude):
+        """Compute a leg state vector for periodic motion at a given time [0,1]."""
+        # Simple walking pattern for ant
+        joint_state = np.zeros(8)
+        joint_state[0] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
+        joint_state[2] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
+        joint_state[4] = leg_amplitude * (math.sin(2*math.pi*time))
+        joint_state[6] = leg_amplitude * (math.sin(2*math.pi*time))
+        
+        ad1 = (1-ankle_amplitude)
+        
+        joint_state[1] = -(ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
+        joint_state[3] = -(ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
+        joint_state[5] = ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
+        joint_state[7] = ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
+        return joint_state
+
+    def step(self, delta_pos, should_step=True, *args, **kwargs):
+        delta_pos = np.clip(delta_pos, -1, 1)
+        
+        # record the action for use in the ActionCost measure, after clipping, before shrinking
+        self._sim.most_recent_action = delta_pos
+        
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
+        delta_pos *= self._config.DELTA_POS_LIMIT
+        
+        self._sim: AntV2Sim
+        #clip the motor targets to the joint range
+        t = math.fmod(self._sim.get_world_time(), 1.0)
+
+        natural_ant_gait = self.periodic_leg_motion_at(t, 0.23, -0.26, 0.775)
+        target_pos = np.clip(natural_ant_gait + delta_pos, -1, 1)
+
+        self._sim.robot.leg_joint_pos = np.clip(target_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        if should_step:
+            return self._sim.step(HabitatSimActions.LEG_VEL)
+        
+        
         return None
 
 
