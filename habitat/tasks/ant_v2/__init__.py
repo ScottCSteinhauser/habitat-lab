@@ -24,6 +24,7 @@ def _try_register_ant_v2_task():
                 raise anttask_import_error
     # Register actions
     import habitat.tasks.ant_v2.ant_v2
+    import habitat.tasks.ant_v2.ant_measures
 
     if not HabitatSimActions.has_action("LEG_ACTION"):
         HabitatSimActions.extend_action_space("LEG_ACTION")

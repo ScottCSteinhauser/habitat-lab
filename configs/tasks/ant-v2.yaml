@@ -88,7 +88,7 @@ TASK:
     # may want ego centric locations of feet, contact information of feet (force or boolean), may want history 
     #NOTE: list active terms here:
     ACTIVE_TERMS: ["PERIODIC_TIME", "EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"] # need to update joint target, add history of actions
-    
+
 
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
 
