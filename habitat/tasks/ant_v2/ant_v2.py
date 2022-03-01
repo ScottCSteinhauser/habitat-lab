@@ -81,6 +81,9 @@ class AntV2Sim(HabitatSim):
         self.enable_physics = True
         self.robot = None
         
+        # Stores the history of actions taken by the ant, relevant for rewarding smoother actions and giving the ant context about past actions
+        self.joint_position_history = []
+        
         # The leg target state for the ant
         self.leg_target_state = None
         
@@ -170,6 +173,8 @@ class AntV2Sim(HabitatSim):
 
         self._try_acquire_context()
 
+        self.joint_position_history = []        
+        
         if self.robot is None: # Load the environment
             # # get the primitive assets attributes manager
             prim_templates_mgr = self.get_asset_template_manager()
@@ -237,6 +242,9 @@ class AntV2Sim(HabitatSim):
         self.elapsed_steps = 0
 
     def step(self, action):
+        # add robot joint position to history
+        self.joint_position_history.append([self.robot.leg_joint_state])
+        
         #cache the position before updating
         self.step_physics(1.0 / self.ctrl_freq)
         self.prev_robot_transformation = self.robot.base_transformation
@@ -277,8 +285,11 @@ class AntObservationSpaceSensor(Sensor):
         #compute the size of the observation from active terms
         self._observation_size = 0
         for active_term in config.ACTIVE_TERMS:
-            self._observation_size += config.get(active_term).SIZE
-        #print(self._observation_size)
+            if active_term == "JOINT_POSITION_HISTORY":
+                self._observation_size += config.get(active_term).SIZE * config.get(active_term).NUM_STEPS
+            else:
+                self._observation_size += config.get(active_term).SIZE
+        print(self._observation_size)
         super().__init__(config=config)
 
     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
@@ -356,8 +367,23 @@ class AntObservationSpaceSensor(Sensor):
             obs_terms.extend([x for x in list(self._sim.robot.leg_joint_pos)])
 
         if "JOINT_TARGET" in self.config.ACTIVE_TERMS:
-            # joint state rest position target (8D) (for joint error reward)
+            # joint state position target (8D)
             obs_terms.extend([x for x in list(self._sim.leg_target_state)])
+        
+        if "NEXT_JOINT_TARGET" in self.config.ACTIVE_TERMS:
+            # joint state position target (8D) (for timestep t+1)
+            obs_terms.extend([x for x in list(self._sim.leg_target_state)])
+            
+        if "JOINT_POSITION_HISTORY" in self.config.ACTIVE_TERMS:
+            # joint state position target (8D) (for timestep t+1)
+            # get size of history (Number of previous steps to include)
+            # Number of dimensions = 8 * num_steps
+            for i in range(-self.config.JOINT_POSITION_HISTORY.NUM_STEPS, 0):
+                if (self.config.JOINT_POSITION_HISTORY.NUM_STEPS > len(self._sim.joint_position_history)):
+                    obs_terms.extend([0]*8)
+                else:
+                    obs_terms.extend([x for x in list(self._sim.joint_position_history[i])])
+                    #print(self._sim.joint_position_history[i])
 
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
 
@@ -386,15 +412,12 @@ class LegRelPosAction(SimulatorTaskAction):
         delta_pos *= self._config.DELTA_POS_LIMIT
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
-        print("new", delta_pos + self._sim.robot.leg_joint_pos)
-
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
         
         # record the action for use in the ActionCost measure
         self._sim.most_recent_action = delta_pos
-        print("actual",self._sim.robot.leg_joint_pos)
         return None
 
 @registry.register_task_action
@@ -516,8 +539,12 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
 
         natural_ant_gait = self.periodic_leg_motion_at(t, 0.23, -0.26, 0.775)
         target_pos = np.clip(natural_ant_gait + delta_pos, -1, 1)
-
+        
         self._sim.robot.leg_joint_pos = np.clip(target_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        
+        # update target position to be the natural gait
+        self._sim.leg_target_state = natural_ant_gait
+        
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
         

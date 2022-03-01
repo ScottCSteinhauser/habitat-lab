@@ -82,12 +82,21 @@ TASK:
     JOINT_VEL:
       SIZE: 8
     JOINT_TARGET: # Sets a target pose for the ant; relevant when rewarding the ant for closeness to this pose
+      # subject to change with the LEG_ACTION_GAIT_DEVIATION controller
       SIZE: 8
       POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
-    #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
+    NEXT_JOINT_TARGET:
+      SIZE: 8
+      POSE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
+    JOINT_POSITION_HISTORY:
+      SIZE: 8
+      NUM_STEPS: 3 # number of previous steps to include in history
+    ACTION_HISTORY:
+      SIZE: 8
+      NUM_STEPS: 3 # number of previous steps to include in history
     # may want ego centric locations of feet, contact information of feet (force or boolean), may want history 
     #NOTE: list active terms here:
-    ACTIVE_TERMS: ["PERIODIC_TIME", "EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET"] # need to update joint target, add history of actions
+    ACTIVE_TERMS: ["PERIODIC_TIME", "EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET","JOINT_POSITION_HISTORY","ACTION_HISTORY"] # need to update joint target, add history of actions
 
 
   SENSORS: ["ANT_OBSERVATION_SPACE_SENSOR"]
