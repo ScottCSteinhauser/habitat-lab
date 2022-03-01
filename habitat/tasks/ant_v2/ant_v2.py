@@ -81,9 +81,6 @@ class AntV2Sim(HabitatSim):
         self.enable_physics = True
         self.robot = None
         
-        # Stores the history of actions taken by the ant, relevant for rewarding smoother actions and giving the ant context about past actions
-        self.joint_position_history = []
-        
         # The leg target state for the ant
         self.leg_target_state = None
         
@@ -111,8 +108,11 @@ class AntV2Sim(HabitatSim):
         #used to measure root transformation delta for reward
         self.prev_robot_transformation = None
         
-        #used to give reward for magnitude of action
-        self.most_recent_action = None
+        # Stores the history of actions taken by the ant, relevant for rewarding smoother actions and giving the ant context about past joint positions
+        self.action_history = []
+        
+        # Stores the history of actions taken by the ant, relevant giving the ant context about past joint positions
+        self.joint_position_history = []
 
         #the control rate in Hz. Simulator is stepped at 1.0/ctrl_freq.
         #NOTE: should be balanced with ENVIRONMENT.MAX_EPISODE_STEPS and RL.PPO.num_steps
@@ -173,7 +173,8 @@ class AntV2Sim(HabitatSim):
 
         self._try_acquire_context()
 
-        self.joint_position_history = []        
+        self.joint_position_history = []
+        self.action_history = []          
         
         if self.robot is None: # Load the environment
             # # get the primitive assets attributes manager
@@ -243,7 +244,7 @@ class AntV2Sim(HabitatSim):
 
     def step(self, action):
         # add robot joint position to history
-        self.joint_position_history.append([self.robot.leg_joint_state])
+        self.joint_position_history.append(self.robot.leg_joint_state)
         
         #cache the position before updating
         self.step_physics(1.0 / self.ctrl_freq)
@@ -285,7 +286,7 @@ class AntObservationSpaceSensor(Sensor):
         #compute the size of the observation from active terms
         self._observation_size = 0
         for active_term in config.ACTIVE_TERMS:
-            if active_term == "JOINT_POSITION_HISTORY":
+            if active_term == "JOINT_POSITION_HISTORY" or active_term == "ACTION_HISTORY" :
                 self._observation_size += config.get(active_term).SIZE * config.get(active_term).NUM_STEPS
             else:
                 self._observation_size += config.get(active_term).SIZE
@@ -375,7 +376,7 @@ class AntObservationSpaceSensor(Sensor):
             obs_terms.extend([x for x in list(self._sim.leg_target_state)])
             
         if "JOINT_POSITION_HISTORY" in self.config.ACTIVE_TERMS:
-            # joint state position target (8D) (for timestep t+1)
+            # joint state position target (8D) 
             # get size of history (Number of previous steps to include)
             # Number of dimensions = 8 * num_steps
             for i in range(-self.config.JOINT_POSITION_HISTORY.NUM_STEPS, 0):
@@ -384,6 +385,17 @@ class AntObservationSpaceSensor(Sensor):
                 else:
                     obs_terms.extend([x for x in list(self._sim.joint_position_history[i])])
                     #print(self._sim.joint_position_history[i])
+        
+        if "ACTION_HISTORY" in self.config.ACTIVE_TERMS:
+            # Previous actions (8D)
+            # get size of history (Number of previous steps to include)
+            # Number of dimensions = 8 * num_steps
+            for i in range(-self.config.ACTION_HISTORY.NUM_STEPS, 0):
+                if (self.config.ACTION_HISTORY.NUM_STEPS > len(self._sim.action_history)):
+                    obs_terms.extend([0]*8)
+                else:
+                    obs_terms.extend([x for x in list(self._sim.action_history[i])])
+                    print(self._sim.action_history[i])
 
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
 
@@ -408,6 +420,10 @@ class LegRelPosAction(SimulatorTaskAction):
     def step(self, delta_pos, should_step=True, *args, **kwargs):
         # clip from -1 to 1
         delta_pos = np.clip(delta_pos, -1, 1)
+        
+        # record the normalized action for use in the ActionCost measure
+        self._sim.action_history.append(np.copy(delta_pos))
+        
         #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
         self._sim: AntV2Sim
@@ -416,8 +432,6 @@ class LegRelPosAction(SimulatorTaskAction):
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
         
-        # record the action for use in the ActionCost measure
-        self._sim.most_recent_action = delta_pos
         return None
 
 @registry.register_task_action
@@ -440,14 +454,15 @@ class LegAbsPosAction(SimulatorTaskAction):
         # clip from -1 to 1
         pos = np.clip(pos, -1, 1)
 
+        # record the normalized action for use in the ActionCost measure
+        self._sim.action_history.append(np.copy(pos))
+
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
         self._sim.robot.leg_joint_pos = np.clip(pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
-        
-        # record the action for use in the ActionCost measure
-        self._sim.most_recent_action = pos
+
         return None
 
 
@@ -470,8 +485,6 @@ class LegRelPosActionSymmetrical(SimulatorTaskAction):
     def step(self, action, should_step=True, *args, **kwargs):
         # clip from -1 to 1
         action = np.clip(action, -1, 1) # should be 4 dimensions
-        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
-        action *= self._config.DELTA_POS_LIMIT
         
         # take the 4 dimensions and apply them to both sides of the ant
         delta_pos = []
@@ -482,14 +495,18 @@ class LegRelPosActionSymmetrical(SimulatorTaskAction):
         delta_pos.extend(action[2:4])
         delta_pos[-2] *= -1
         
+        # record the normalized action for use in the ActionCost measure
+        self._sim.action_history.append(np.copy(delta_pos))
+        
+        #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
+        delta_pos *= self._config.DELTA_POS_LIMIT
+        
         self._sim: AntV2Sim
         #clip the motor targets to the joint range
         self._sim.robot.leg_joint_pos = np.clip(delta_pos + self._sim.robot.leg_joint_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
-        
-        # record the action for use in the ActionCost measure
-        self._sim.most_recent_action = delta_pos
+
         return None
 
 @registry.register_task_action
@@ -528,8 +545,8 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         delta_pos = np.clip(delta_pos, -1, 1)
         
         # record the action for use in the ActionCost measure, after clipping, before shrinking
-        self._sim.most_recent_action = delta_pos
-        
+        self._sim.action_history.append(np.copy(delta_pos))
+
         #NOTE: DELTA_POS_LIMIT==1 results in max policy output covering full joint range (-1, 1) radians in 2 timesteps
         delta_pos *= self._config.DELTA_POS_LIMIT
         
@@ -547,7 +564,6 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
-        
         
         return None
 

@@ -349,13 +349,56 @@ class ActionCost(VirtualMeasure):
         if self._metric is None:
             self._metric = None
         total_reward = 1
-        # most_recent_action values are between -1 and 1, 0 is low cost action
-        for x in self._sim.most_recent_action:
-            total_reward *= 1 - abs(x)
+        # action_history[-1] values are between -1 and 1, 0 is low cost action
+        if len(self._sim.action_history):
+            for x in self._sim.action_history[-1]:
+                total_reward *= 1 - abs(x)
+        else:
+            total_reward = 0
         #magnitude of the action vector rather than sum of squares.
         self._metric = total_reward
         #self._metric = -np.sum(np.square(self._sim.most_recent_action))
         #print("cost",self._metric)
+
+@registry.register_measure
+class ActionSmoothness(VirtualMeasure):
+    # Inspired by MuJoCo's ant-v2 reward structure
+    """Actions more like previous actions are better. Window size is dependent on ACTION_HISTORY"""
+
+    cls_uuid: str = "ACTION_SMOOTHNESS"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+        self.window = config.WINDOW
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        if self._metric is None:
+            self._metric = None
+        total_reward = 1
+        
+        # Get average of n previous episodes
+        #TODO: This assumes the action space dimension is 8..
+        avg_action = np.zeros(8)
+        for i in range(-self.window - 1, -1):
+            if i > len(self._sim.action_history):
+                avg_action += self._sim.action_history[i] / self.window
+        
+            
+        # Now get difference between average action & current action normalize
+        previous_action = self._sim.action_history[-1]
+        if len(self._sim.action_history):
+            for i in range(len(previous_action)):
+                total_reward *= abs(previous_action[i] - avg_action[i]) / 2
+        else:
+            total_reward = 0
+        #magnitude of the action vector rather than sum of squares.
+        self._metric = total_reward
+        #self._metric = -np.sum(np.square(self._sim.most_recent_action))
+        print("Smoothness",self._metric)
 
 @registry.register_measure
 class CompositeAntReward(VirtualMeasure):
