@@ -89,7 +89,7 @@ def ant_environment_example():
             #for i in range(2):
             #    action = env.action_space.sample()
             obs = env.step(action)
-            print(obs['ant_observation_space_sensor'])
+            #print(obs['ant_observation_space_sensor'])
             observations.append(obs)
             #keystroke = cv2.waitKey(0)
             

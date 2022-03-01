@@ -83,13 +83,21 @@ class AntV2Sim(HabitatSim):
         
         # The leg target state for the ant
         self.leg_target_state = None
+        self.next_leg_target_state = None # Relevant when using the gait deviation controller, represents the gait joint positions for the next timestep
+        self.leg_target_state_type = None
+        
         
         if config.LEG_TARGET_STATE == "RANDOM":
             self.leg_target_state = np.random.rand(8) * 2 - 1
+            self.leg_target_state_type = "RANDOM"
+        elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
+            self.leg_target_state = np.zeros(8) # will be updated every timestep to match the ant's natural gait
+            self.leg_target_state_type = "NATURAL_GAIT"
         else:
             self.leg_target_state = np.array(config.LEG_TARGET_STATE)
+            self.leg_target_state_type = "CONSTANT"
         self.leg_target_state = np.array([float(x) for x in self.leg_target_state])
-        
+        self.next_leg_target_state = self.leg_target_state
         
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
@@ -235,6 +243,8 @@ class AntV2Sim(HabitatSim):
             
             if config.LEG_TARGET_STATE == "RANDOM":
                 self.leg_target_state = np.random.rand(8) * 2 - 1
+            elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
+                self.leg_target_state = np.zeros(8)
             
             if config.TARGET_VECTOR == "RANDOM":
                 self.generate_random_target_vector()
@@ -290,7 +300,6 @@ class AntObservationSpaceSensor(Sensor):
                 self._observation_size += config.get(active_term).SIZE * config.get(active_term).NUM_STEPS
             else:
                 self._observation_size += config.get(active_term).SIZE
-        print(self._observation_size)
         super().__init__(config=config)
 
     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
@@ -373,7 +382,7 @@ class AntObservationSpaceSensor(Sensor):
         
         if "NEXT_JOINT_TARGET" in self.config.ACTIVE_TERMS:
             # joint state position target (8D) (for timestep t+1)
-            obs_terms.extend([x for x in list(self._sim.leg_target_state)])
+            obs_terms.extend([x for x in list(self._sim.next_leg_target_state)])
             
         if "JOINT_POSITION_HISTORY" in self.config.ACTIVE_TERMS:
             # joint state position target (8D) 
@@ -555,12 +564,15 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         t = math.fmod(self._sim.get_world_time(), 1.0)
 
         natural_ant_gait = self.periodic_leg_motion_at(t, 0.23, -0.26, 0.775)
-        target_pos = np.clip(natural_ant_gait + delta_pos, -1, 1)
         
-        self._sim.robot.leg_joint_pos = np.clip(target_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
+        self._sim.robot.leg_joint_pos = np.clip(natural_ant_gait + delta_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         
         # update target position to be the natural gait
-        self._sim.leg_target_state = natural_ant_gait
+        if self._sim.leg_target_state_type == "NATURAL_GAIT":
+            self._sim.leg_target_state = natural_ant_gait
+            
+            next_t = t = math.fmod(self._sim.get_world_time() + 1.0 / self._sim.ctrl_freq, 1.0)
+            self._sim.next_leg_target_state = self.periodic_leg_motion_at(next_t, 0.23, -0.26, 0.775)
         
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)

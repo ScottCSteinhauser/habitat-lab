@@ -89,12 +89,12 @@ class VectorRootDelta(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        self.vector = self._sim.target_vector
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         #projected_vector = (displacement.dot(v) / norm(v)^2) * v
@@ -113,19 +113,19 @@ class VelocityAlignment(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.target_vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        self.vector = self._sim.target_vector
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         ant_velocity = self._sim.robot.base_velocity
         ant_velocity_unit_vector = ant_velocity / np.linalg.norm(ant_velocity)
         
         # we have two normalized vectors, metric is just the dot product
-        alignment = np.dot(ant_velocity_unit_vector, self.target_vector)
+        alignment = np.dot(ant_velocity_unit_vector, self.vector)
         self._metric = alignment
         # print("vel alignment:", self._metric)
 
@@ -139,12 +139,12 @@ class OrthogonalVelocity(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.target_vector = sim.target_vector
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        self.target_vector = self._sim.target_vector
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
 
@@ -164,13 +164,13 @@ class SpeedTarget(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         #NOTE: should be normalized, start with X axis
-        self.target_vector = sim.target_vector
-        self.target_speed = sim.target_speed
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        self.target_vector = self._sim.target_vector
+        self.target_speed = self._sim.target_speed
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         ant_velocity = self._sim.robot.base_velocity
@@ -192,15 +192,15 @@ class JointStateError(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         self._normalized = False if not config.NORMALIZED else config.NORMALIZED
-        #TODO: dynamic targets, for now just a rest pose
-        self.target_state = sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
-        #NOTE: computed first time (scalar)
+       #NOTE: computed first time (scalar)
         self.joint_norm_scale = None
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        self.target_state = self._sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+ 
         if self._metric is None:
             self._metric = None
 
@@ -226,8 +226,6 @@ class JointStateProductError(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        #TODO: dynamic targets, for now just a rest pose
-        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
         #NOTE: computed first time
         self.joint_norm_scale = None
         super().__init__(sim, config, args)
@@ -235,6 +233,8 @@ class JointStateProductError(VirtualMeasure):
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.target_state = self._sim.leg_target_state 
         if self._metric is None:
             self._metric = None
         if self.joint_norm_scale is None:
@@ -258,29 +258,35 @@ class VectorAlignmentValue(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
-        #TODO: dynamic targets, for now just a rest pose
-        self.target_state = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
-        if config.UUID:
-            self.cls_uuid = config.UUID
-        self.local_vector = np.array(config.LOCAL_VECTOR)
-        if config.GLOBAL_VECTOR == "TARGET":
-            self.global_vector = sim.target_vector
-        else:
-            self.global_vector = np.array(config.GLOBAL_VECTOR)
-        self.local_vector = np.array([float(x) for x in self.local_vector])
-        self.global_vector = np.array([float(x) for x in self.global_vector])
+        self.config = config
+        if self.config.UUID:
+            self.cls_uuid = self.config.UUID
+        
         super().__init__(sim, config, args)
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
+        #TODO: dynamic targets, for now just a rest pose
+        self.local_vector = np.array(self.config.LOCAL_VECTOR)
+        if self.config.GLOBAL_VECTOR == "TARGET":
+            self.global_vector = self._sim.target_vector
+        else:
+            self.global_vector = np.array(self.config.GLOBAL_VECTOR)
+        self.local_vector = np.array([float(x) for x in self.local_vector])
+        self.global_vector = np.array([float(x) for x in self.global_vector])
+        
         if self._metric is None:
             self._metric = None
             
         globalized_local_vector = self._sim.robot.base_transformation.transform_vector(mn.Vector3(self.local_vector[0], self.local_vector[1], self.local_vector[2]))
         alignment = np.dot(self.global_vector, globalized_local_vector)
-        self._metric = alignment
-        #print("vector_alignment:",self._metric)
+        
+        if self.config.MODIFIER == "SQUARED":
+            self._metric = alignment ** 2 * (alignment / abs(alignment)) # Square the measure & multiple it by it's sign
+        else:
+            self._metric = alignment
+        # print("vector_alignment:",self._metric)
 
 @registry.register_measure
 class JointStateMaxError(VirtualMeasure):
@@ -350,16 +356,15 @@ class ActionCost(VirtualMeasure):
             self._metric = None
         total_reward = 1
         # action_history[-1] values are between -1 and 1, 0 is low cost action
-        print(self._sim.action_history[-1])
         if len(self._sim.action_history):
             for x in self._sim.action_history[-1]:
                 total_reward *= 1 - abs(x)
         else:
             total_reward = 0
         #magnitude of the action vector rather than sum of squares.
-        self._metric = total_reward
+        self._metric = total_reward - 1
         #self._metric = -np.sum(np.square(self._sim.most_recent_action))
-        print("cost",self._metric)
+        #print("cost",self._metric)
 
 @registry.register_measure
 class ActionSmoothness(VirtualMeasure):
@@ -399,7 +404,7 @@ class ActionSmoothness(VirtualMeasure):
         #magnitude of the action vector rather than sum of squares.
         self._metric = total_reward
         #self._metric = -np.sum(np.square(self._sim.most_recent_action))
-        print("Smoothness",self._metric)
+        #print("Smoothness",self._metric)
 
 @registry.register_measure
 class CompositeAntReward(VirtualMeasure):
