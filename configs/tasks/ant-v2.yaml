@@ -92,7 +92,7 @@ TASK:
       NUM_STEPS: 3 # number of previous steps to include in history
     ACTION_HISTORY:
       SIZE: 8
-      NUM_STEPS: 3 # number of previous steps to include in history
+      NUM_STEPS: 5 # number of previous steps to include in history
     # may want ego centric locations of feet, contact information of feet (force or boolean), may want history 
     #NOTE: list active terms here:
     ACTIVE_TERMS: ["PERIODIC_TIME", "EGOCENTRIC_TARGET_VECTOR", "EGOCENTRIC_UPWARDS_VECTOR", "EGOCENTRIC_BASE_LIN_VEL", "EGOCENTRIC_BASE_ANG_VEL", "JOINT_POS","JOINT_MOTOR_POS","JOINT_VEL","JOINT_TARGET","JOINT_POSITION_HISTORY","ACTION_HISTORY"] # need to update joint target, add history of actions
@@ -162,7 +162,7 @@ TASK:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosActionGaitDeviation"
       LEG_JOINT_DIMENSIONALITY: 8
-      DELTA_POS_LIMIT: 0.3
+      DELTA_POS_LIMIT: 0.5
   POSSIBLE_ACTIONS:
     - LEG_ACTION_GAIT_DEVIATION
 

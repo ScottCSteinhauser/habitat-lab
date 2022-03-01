@@ -66,7 +66,9 @@ def ant_environment_example():
     observations = []
     with habitat.Env(config=config) as env:
         env.reset()
+        step = 0
         while not env.episode_over:
+            step+=1
             #print(env._sim.robot.sim_obj.joint_positions)
             
             #sample random action for testing:
@@ -81,11 +83,13 @@ def ant_environment_example():
             #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
             #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
             #print("target",joint_target)
-            #action['action_args']['leg_action'] = joint_target # joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
+            set_action = np.array([1]*8) * 0.5 * ((step%2) * 2 - 1)
+            action['action_args']['leg_action'] = set_action # joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
             #print("action", action['action_args']['leg_action'])
             #for i in range(2):
             #    action = env.action_space.sample()
             obs = env.step(action)
+            print(obs['ant_observation_space_sensor'])
             observations.append(obs)
             #keystroke = cv2.waitKey(0)
             

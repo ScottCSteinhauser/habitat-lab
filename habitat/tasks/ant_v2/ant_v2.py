@@ -391,11 +391,11 @@ class AntObservationSpaceSensor(Sensor):
             # get size of history (Number of previous steps to include)
             # Number of dimensions = 8 * num_steps
             for i in range(-self.config.ACTION_HISTORY.NUM_STEPS, 0):
-                if (self.config.ACTION_HISTORY.NUM_STEPS > len(self._sim.action_history)):
+                if (abs(i) > len(self._sim.action_history)):
                     obs_terms.extend([0]*8)
                 else:
                     obs_terms.extend([x for x in list(self._sim.action_history[i])])
-                    print(self._sim.action_history[i])
+                    #print(self._sim.action_history[i])
 
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
 
