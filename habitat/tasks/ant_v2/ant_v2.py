@@ -85,7 +85,7 @@ class AntV2Sim(HabitatSim):
         self.leg_target_state = None
         self.next_leg_target_state = None # Relevant when using the gait deviation controller, represents the gait joint positions for the next timestep
         self.leg_target_state_type = None
-        
+                
         
         if config.LEG_TARGET_STATE == "RANDOM":
             self.leg_target_state = np.random.rand(8) * 2 - 1
@@ -416,7 +416,18 @@ class AntObservationSpaceSensor(Sensor):
                     contacts[leg_indices[contact.link_id_a]] = 1
             obs_terms.extend(contacts)
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
-
+        if "EGOCENTRIC_LEG_POSITIONS" in self.config.ACTIVE_TERMS:
+            # get positions of link ids 4, 9, 14, 19
+            link_ids = [4, 9, 14, 19]
+            link_local_ankles = [mn.Vector3(0.25, -0.25, 0), mn.Vector3(0.25,0.25,0.0), mn.Vector3(-0.25, 0.25, 0), mn.Vector3(-0.25,-0.25,0.0)]
+            local_ankle = mn.Vector3(0,0,0) # should eventually be the end of the leg
+            for i, link_id in enumerate(link_ids):
+                link = self._sim.robot.sim_obj.get_link_scene_node(link_id)
+                global_ankle_location = link.transformation_matrix().transform_point(link_local_ankles[i])
+                egocentric_ankle_location = self._sim.robot.base_transformation.inverted().transform_point(global_ankle_location)
+                obs_terms.extend([x for x in list(egocentric_ankle_location)])
+            
+            
         return np.array(obs_terms)
 
 @registry.register_task_action
