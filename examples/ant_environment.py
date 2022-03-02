@@ -83,7 +83,7 @@ def ant_environment_example():
             #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
             #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
             #print("target",joint_target)
-            set_action = np.array([1]*8) * 0.5 * ((step%2) * 2 - 1)
+            set_action = np.array([1]*8) * 0.2 * ((step%2) * 2 - 1)
             action['action_args']['leg_action'] = set_action # joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
             #print("action", action['action_args']['leg_action'])
             #for i in range(2):

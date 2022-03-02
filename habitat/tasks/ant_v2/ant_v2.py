@@ -405,7 +405,16 @@ class AntObservationSpaceSensor(Sensor):
                 else:
                     obs_terms.extend([x for x in list(self._sim.action_history[i])])
                     #print(self._sim.action_history[i])
-
+        if "LEG_CONTACTS" in self.config.ACTIVE_TERMS:
+            # Gives 1 (leg in contact) or 0 (no contact) for each leg
+            # Legs have link_ids 4, 9, 14, 19
+            contacts = [0]*4
+            leg_indices = {4:0, 9:1, 14:2, 19:3}
+            contact_points = self._sim.get_physics_contact_points()
+            for contact in contact_points:
+                if contact.link_id_a in leg_indices.keys():
+                    contacts[leg_indices[contact.link_id_a]] = 1
+            obs_terms.extend(contacts)
         #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
 
         return np.array(obs_terms)
