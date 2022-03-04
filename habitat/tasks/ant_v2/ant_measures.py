@@ -369,8 +369,8 @@ class ActionCost(VirtualMeasure):
             total_reward = 0
 
         self._metric = total_reward - 1
-        if len(self._sim.action_history):
-            print(self._sim.action_history[-1], self._metric)
+        #if len(self._sim.action_history):
+        #    print(self._sim.action_history[-1], self._metric)
 
 @registry.register_measure
 class ActionSmoothness(VirtualMeasure):
