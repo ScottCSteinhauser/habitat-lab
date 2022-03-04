@@ -347,6 +347,9 @@ class ActionCost(VirtualMeasure):
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
+        self.config = config
+        if self.config.UUID:
+            self.cls_uuid = self.config.UUID
         super().__init__(sim, config, args)
 
     def update_metric(
@@ -357,14 +360,17 @@ class ActionCost(VirtualMeasure):
         total_reward = 1
         # action_history[-1] values are between -1 and 1, 0 is low cost action
         if len(self._sim.action_history):
-            for x in self._sim.action_history[-1]:
-                total_reward *= 1 - abs(x)
+            if self.config.MODIFIER == "NORMALIZED_PRODUCT":
+                for x in self._sim.action_history[-1]:
+                    total_reward *= 1 - abs(x)
+            elif self.config.MODIFIER == "NORMALIZED_SUM":
+                total_reward -= np.average(np.absolute(self._sim.action_history[-1]))
         else:
             total_reward = 0
-        #magnitude of the action vector rather than sum of squares.
+
         self._metric = total_reward - 1
-        #self._metric = -np.sum(np.square(self._sim.most_recent_action))
-        #print("cost",self._metric)
+        #if len(self._sim.action_history):
+        #    print(self._sim.action_history[-1], self._metric)
 
 @registry.register_measure
 class ActionSmoothness(VirtualMeasure):
