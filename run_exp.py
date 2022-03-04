@@ -373,6 +373,12 @@ experiments: Dict[str, Dict[str,str]] = {
             "\"",
         "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
     },
+    "ant_gait_action_cost_reduction_with_sum":{
+        "description": "Try teaching the ant to orient with a variable vector. Using squared forward alignment measure. Lower action magnitude.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": " \"TASK.MEASUREMENTS [UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,ACTION_COST_PRODUCT,ACTION_COST_SUM,ACTION_SMOOTHNESS,COMPOSITE_ANT_REWARD] SIMULATOR.TARGET_VECTOR [1.0,0.0,0.0] TASK.COMPOSITE_ANT_REWARD.COMPONENTS [ACTION_COST_PRODUCT,ACTION_COST_SUM] TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0] TASK.ACTIONS.LEG_ACTION_GAIT_DEVIATION.DELTA_POS_LIMIT 1.0\"",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+    },
 }
 
 

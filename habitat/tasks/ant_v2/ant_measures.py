@@ -364,13 +364,13 @@ class ActionCost(VirtualMeasure):
                 for x in self._sim.action_history[-1]:
                     total_reward *= 1 - abs(x)
             elif self.config.MODIFIER == "NORMALIZED_SUM":
-                total_reward -= np.sum(np.absolute(self._sim.action_history[-1])) / len(self._sim.action_history[-1])
+                total_reward -= np.average(np.absolute(self._sim.action_history[-1]))
         else:
             total_reward = 0
 
         self._metric = total_reward - 1
-        #if len(self._sim.action_history):
-        #    print(self._sim.action_history[-1], self._metric)
+        if len(self._sim.action_history):
+            print(self._sim.action_history[-1], self._metric)
 
 @registry.register_measure
 class ActionSmoothness(VirtualMeasure):
