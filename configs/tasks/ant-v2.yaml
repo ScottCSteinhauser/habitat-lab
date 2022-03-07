@@ -36,7 +36,7 @@ SIMULATOR:
   LEG_TARGET_STATE: "NATURAL_GAIT" #[0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
 
   #Target vector for the ant to progress towards, vector must be normalized
-  TARGET_VECTOR: "RANDOM" #[0.0, 0.0, 1.0]
+  TARGET_VECTOR: [0.0, 0.0, 1.0]
   ANT_START_ROTATION: 1.57 # Does not work properly
   TARGET_SPEED: 1
 
