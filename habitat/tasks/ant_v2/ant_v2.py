@@ -335,6 +335,8 @@ class AntObservationSpaceSensor(Sensor):
             tv = [float(x) for x in self._sim.target_vector]
             egocentric_target_vector = self._sim.robot.base_transformation.inverted().transform_vector(mn.Vector3(tv[0], tv[1], tv[2]))
             obs_terms.extend([x for x in list(egocentric_target_vector)])
+            print("Target vector:", [x for x in list(tv)])
+            print("Egocentric vector:", [x for x in list(egocentric_target_vector)])
             
         if "EGOCENTRIC_UPWARDS_VECTOR" in self.config.ACTIVE_TERMS:
             # gives the global up vector (0,1,0) in local space (3D)

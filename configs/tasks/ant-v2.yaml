@@ -36,7 +36,7 @@ SIMULATOR:
   LEG_TARGET_STATE: "NATURAL_GAIT" #[0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0]
 
   #Target vector for the ant to progress towards, vector must be normalized
-  TARGET_VECTOR: [0.0, 0.0, 1.0]
+  TARGET_VECTOR: "RANDOM"
   ANT_START_ROTATION: 1.57 # Does not work properly
   TARGET_SPEED: 1
 
@@ -137,7 +137,7 @@ TASK:
   COMPOSITE_ANT_REWARD:
     TYPE: "CompositeAntReward"
     #setting up the defaults here
-    COMPONENTS: ["ACTION_COST_SUM","JOINT_STATE_ERROR","X_LOCATION"]
+    COMPONENTS: ["ACTION_COST_PRODUCT","JOINT_STATE_ERROR","X_LOCATION"]
     WEIGHTS: [1.0, 1.0, 10.0]
   UPRIGHT_ORIENTATION_DEVIATION_VALUE:
     TYPE: "VectorAlignmentValue"
