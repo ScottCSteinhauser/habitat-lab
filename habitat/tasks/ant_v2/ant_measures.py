@@ -204,7 +204,7 @@ class JointStateError(VirtualMeasure):
         if self._metric is None:
             self._metric = None
 
-        current_state = self._sim.robot.leg_joint_state
+        current_state = self._sim.robot.leg_joint_pos
 
         if self._normalized:
             if self.joint_norm_scale is None:
@@ -215,7 +215,7 @@ class JointStateError(VirtualMeasure):
             self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
         else:
             self._metric = -np.linalg.norm(current_state - self.target_state)
-        # print(self._metric)
+        print(self._metric)
 
 @registry.register_measure
 class JointStateProductError(VirtualMeasure):
@@ -234,7 +234,7 @@ class JointStateProductError(VirtualMeasure):
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
         #TODO: dynamic targets, for now just a rest pose
-        self.target_state = self._sim.leg_target_state 
+        self.target_state = self._sim.leg_target_state
         if self._metric is None:
             self._metric = None
         if self.joint_norm_scale is None:
@@ -242,7 +242,7 @@ class JointStateProductError(VirtualMeasure):
             #per-element maximum error between lower|upper limits and target
             max_errors = np.fmax(np.abs(self.target_state-lims[0]), np.abs(self.target_state-lims[1]))
             self.joint_norm_scale = np.reciprocal(max_errors)
-        current_state = self._sim.robot.leg_joint_state
+        current_state = self._sim.robot.leg_joint_pos
         #print(f"current_state = {current_state}")
         normalized_errors = np.abs(current_state-self.target_state)*self.joint_norm_scale
         #print(f"self.joint_norm_scale = {self.joint_norm_scale}")
@@ -307,7 +307,7 @@ class JointStateMaxError(VirtualMeasure):
         if self._metric is None:
             self._metric = None
 
-        current_state = self._sim.robot.leg_joint_state
+        current_state = self._sim.robot.leg_joint_pos
         
         self._metric = -np.max(np.abs(current_state - self.target_state))
 

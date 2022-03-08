@@ -1,6 +1,8 @@
 import magnum as mn
 import numpy as np
 
+import math
+
 from habitat.tasks.ant_v2.quadruped_wrapper import (
     QuadrupedRobot,
     QuadrupedRobotParams,
@@ -74,3 +76,20 @@ class AntV2Robot(QuadrupedRobot):
 
     def update(self):
         super().update()
+        
+    def natural_walking_gait_at(self, time, ankle_amplitude, ankle_period_offset, leg_amplitude):
+        """Compute a leg state vector for periodic motion at a given time [0,1]."""
+        # Simple walking pattern for the ant
+        joint_state = np.zeros(8)
+        joint_state[0] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
+        joint_state[2] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
+        joint_state[4] = leg_amplitude * (math.sin(2*math.pi*time))
+        joint_state[6] = leg_amplitude * (math.sin(2*math.pi*time))
+        
+        ad1 = (1-ankle_amplitude)
+        
+        joint_state[1] = -(ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
+        joint_state[3] = -(ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
+        joint_state[5] = ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
+        joint_state[7] = ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
+        return joint_state

@@ -253,6 +253,14 @@ class AntV2Sim(HabitatSim):
         self.elapsed_steps = 0
 
     def step(self, action):
+        # update joint target
+        if self.leg_target_state_type == "NATURAL_GAIT":
+            t = math.fmod(self.get_world_time(), 1.0)
+            self.leg_target_state = self.robot.natural_walking_gait_at(t, 0.23, -0.26, 0.775)
+            
+            next_t = math.fmod(self.get_world_time() + 1.0 / self.ctrl_freq, 1.0)
+            self.next_leg_target_state = self.robot.natural_walking_gait_at(next_t, 0.23, -0.26, 0.775)
+        
         # add robot joint position to history
         self.joint_position_history.append(self.robot.leg_joint_state)
         
@@ -335,8 +343,8 @@ class AntObservationSpaceSensor(Sensor):
             tv = [float(x) for x in self._sim.target_vector]
             egocentric_target_vector = self._sim.robot.base_transformation.inverted().transform_vector(mn.Vector3(tv[0], tv[1], tv[2]))
             obs_terms.extend([x for x in list(egocentric_target_vector)])
-            # print("Target vector:", [x for x in list(tv)])
-            # print("Egocentric vector:", [x for x in list(egocentric_target_vector)])
+            #print("Target vector:", [x for x in list(tv)])
+            #print("Egocentric vector:", [x for x in list(egocentric_target_vector)])
             
         if "EGOCENTRIC_UPWARDS_VECTOR" in self.config.ACTIVE_TERMS:
             # gives the global up vector (0,1,0) in local space (3D)
@@ -555,23 +563,6 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
             dtype=np.float32,
         )
 
-    def periodic_leg_motion_at(self, time, ankle_amplitude, ankle_period_offset, leg_amplitude):
-        """Compute a leg state vector for periodic motion at a given time [0,1]."""
-        # Simple walking pattern for ant
-        joint_state = np.zeros(8)
-        joint_state[0] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
-        joint_state[2] = leg_amplitude * (math.sin(math.pi + 2*math.pi*time))
-        joint_state[4] = leg_amplitude * (math.sin(2*math.pi*time))
-        joint_state[6] = leg_amplitude * (math.sin(2*math.pi*time))
-        
-        ad1 = (1-ankle_amplitude)
-        
-        joint_state[1] = -(ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
-        joint_state[3] = -(ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1)
-        joint_state[5] = ankle_amplitude * (math.sin(math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
-        joint_state[7] = ankle_amplitude * (math.sin(-math.pi/2 + ankle_period_offset*math.pi + 2*math.pi*time)) + ad1
-        return joint_state
-
     def step(self, delta_pos, should_step=True, *args, **kwargs):
         delta_pos = np.clip(delta_pos, -1, 1)
         
@@ -585,16 +576,9 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         #clip the motor targets to the joint range
         t = math.fmod(self._sim.get_world_time(), 1.0)
 
-        natural_ant_gait = self.periodic_leg_motion_at(t, 0.23, -0.26, 0.775)
+        natural_ant_gait = self._sim.robot.natural_walking_gait_at(t, 0.23, -0.26, 0.775)
         
         self._sim.robot.leg_joint_pos = np.clip(natural_ant_gait + delta_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
-        
-        # update target position to be the natural gait
-        if self._sim.leg_target_state_type == "NATURAL_GAIT":
-            self._sim.leg_target_state = natural_ant_gait
-            
-            next_t = t = math.fmod(self._sim.get_world_time() + 1.0 / self._sim.ctrl_freq, 1.0)
-            self._sim.next_leg_target_state = self.periodic_leg_motion_at(next_t, 0.23, -0.26, 0.775)
         
         if should_step:
             return self._sim.step(HabitatSimActions.LEG_VEL)
