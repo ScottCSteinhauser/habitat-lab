@@ -475,7 +475,7 @@ experiments: Dict[str, Dict[str,str]] = {
             "\"",
         "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
     },
-    "ant_orientation_alignment_withgait_turn_right_v3":{
+    "ant_orientation_alignment_withgait_turn_right_v5":{
         "description": "Try teaching the ant to orient with a constant vector.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": " \""+
