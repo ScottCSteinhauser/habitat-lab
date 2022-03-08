@@ -577,7 +577,7 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         t = math.fmod(self._sim.get_world_time(), 1.0)
 
         natural_ant_gait = self._sim.robot.natural_walking_gait_at(t, 0.23, -0.26, 0.775)
-        
+                
         self._sim.robot.leg_joint_pos = np.clip(natural_ant_gait + delta_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         
         if should_step:

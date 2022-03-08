@@ -215,7 +215,7 @@ class JointStateError(VirtualMeasure):
             self._metric = -np.linalg.norm(current_state - self.target_state)/self.joint_norm_scale
         else:
             self._metric = -np.linalg.norm(current_state - self.target_state)
-        print(self._metric)
+        #print(self._metric)
 
 @registry.register_measure
 class JointStateProductError(VirtualMeasure):

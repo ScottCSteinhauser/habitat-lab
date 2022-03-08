@@ -39,12 +39,12 @@ class AntV2Robot(QuadrupedRobot):
                 ),
             },
 
-            hip_mtr_pos_gain=0.1, # reactivity towards target position
-            hip_mtr_vel_gain=0.1, # damping measure
-            hip_mtr_max_impulse=10.0, # max force aloud in one physics timestep
-            ankle_mtr_pos_gain=0.1,
-            ankle_mtr_vel_gain=0.1,
-            ankle_mtr_max_impulse=10.0,
+            hip_mtr_pos_gain=0.5, # reactivity towards target position
+            hip_mtr_vel_gain=0.5, # damping measure
+            hip_mtr_max_impulse=100.0, # max force aloud in one physics timestep
+            ankle_mtr_pos_gain=0.5,
+            ankle_mtr_vel_gain=0.5,
+            ankle_mtr_max_impulse=100.0,
             # can optimize with fixed base & random target joint positions
             # also should test on ground (ant shouldn't fling itself around)
 

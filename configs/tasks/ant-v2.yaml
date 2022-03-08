@@ -178,9 +178,9 @@ TASK:
       TYPE: "LegAction"
       LEG_CONTROLLER: "LegRelPosActionGaitDeviation"
       LEG_JOINT_DIMENSIONALITY: 8
-      DELTA_POS_LIMIT: 0.5
+      DELTA_POS_LIMIT: 0.0
   POSSIBLE_ACTIONS:
-    - LEG_ACTION
+    - LEG_ACTION_GAIT_DEVIATION
 
 DATASET:
   TYPE: AntV2Dataset-v0
