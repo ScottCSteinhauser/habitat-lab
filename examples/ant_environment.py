@@ -67,43 +67,44 @@ def ant_environment_example():
     with habitat.Env(config=config) as env:
         env.reset()
         step = 0
-        
-        while not env.episode_over:
-            step+=1
-            #print(env._sim.robot.sim_obj.joint_positions)
-            
-            #sample random action for testing:
-            action = env.action_space.sample()
-            #override actions for testing:
-            #action['action_args']['leg_action'] = np.ones(8)*-1
-            #action['action_args']['leg_action'] = np.zeros(8)
-            
-            #joint_target = np.ones(8)*0.5
-            #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
-            #joint_target = env._sim.robot.random_pose()
-            #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
-            #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
-            #print("target",joint_target)
-            set_action = np.array([1]*8) * 1.0 * ((step%2) * 2 - 1)
-            action['action_args']['leg_action'] = set_action # joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
-            #print("action", action['action_args']['leg_action'])
-            #for i in range(2):
-            #    action = env.action_space.sample()
-            obs = env.step(action)
-            #print(obs['ant_observation_space_sensor'])
-            observations.append(obs)
-            # keystroke = cv2.waitKey(0)
-            
-            #print(f"observational_space = {env._sim.observational_space}")
+        for i in range(100):
+            env.reset()
+            while not env.episode_over:
+                step+=1
+                #print(env._sim.robot.sim_obj.joint_positions)
+                
+                #sample random action for testing:
+                action = env.action_space.sample()
+                #override actions for testing:
+                #action['action_args']['leg_action'] = np.ones(8)*-1
+                #action['action_args']['leg_action'] = np.zeros(8)
+                
+                #joint_target = np.ones(8)*0.5
+                #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+                #joint_target = env._sim.robot.random_pose()
+                #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
+                #joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
+                #print("target",joint_target)
+                set_action = np.array([1]*8) * 1.0 * ((step%2) * 2 - 1)
+                action['action_args']['leg_action'] = set_action # joint_space_action_oracle(joint_target, env._sim.robot.leg_joint_pos)
+                #print("action", action['action_args']['leg_action'])
+                #for i in range(2):
+                #    action = env.action_space.sample()
+                obs = env.step(action)
+                #print(obs['ant_observation_space_sensor'])
+                observations.append(obs)
+                # keystroke = cv2.waitKey(0)
+                
+                #print(f"observational_space = {env._sim.observational_space}")
 
-            #NOTE: you can check metrics here:
-            #measure_query = "VECTOR_ROOT_DELTA"
-            #print(f"{measure_query} = {env.task.measurements.measures[measure_query].get_metric()}")
+                #NOTE: you can check metrics here:
+                #measure_query = "VECTOR_ROOT_DELTA"
+                #print(f"{measure_query} = {env.task.measurements.measures[measure_query].get_metric()}")
 
-            #if keystroke == 27:
-            #    break
-            #print(obs["ant_observation_space_sensor"])
-            # cv2.imshow("RGB", obs["robot_third_rgb"])
+                #if keystroke == 27:
+                #    break
+                #print(obs["ant_observation_space_sensor"])
+                # cv2.imshow("RGB", obs["robot_third_rgb"])
     
     vut.make_video(
         observations,
