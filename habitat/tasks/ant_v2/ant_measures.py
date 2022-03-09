@@ -122,7 +122,11 @@ class VelocityAlignment(VirtualMeasure):
         if self._metric is None or self._sim.prev_robot_transformation is None:
             self._metric = None
         ant_velocity = self._sim.robot.base_velocity
-        ant_velocity_unit_vector = ant_velocity / np.linalg.norm(ant_velocity)
+        velocity_magnitude = np.linalg.norm(ant_velocity)
+        if velocity_magnitude == 0:
+            self._metric = 0
+            return
+        ant_velocity_unit_vector = ant_velocity / velocity_magnitude
         
         # we have two normalized vectors, metric is just the dot product
         alignment = np.dot(ant_velocity_unit_vector, self.vector)
@@ -283,6 +287,9 @@ class VectorAlignmentValue(VirtualMeasure):
         alignment = np.dot(self.global_vector, globalized_local_vector)
         
         if self.config.MODIFIER == "SQUARED":
+            if alignment == 0:
+                self._metric = 0
+                return
             self._metric = alignment ** 2 * (alignment / abs(alignment)) # Square the measure & multiple it by it's sign
         else:
             self._metric = alignment
@@ -413,6 +420,31 @@ class ActionSmoothness(VirtualMeasure):
         #print("Smoothness",self._metric)
 
 @registry.register_measure
+class OrientationTerminate(VirtualMeasure):
+    cls_uuid: str = "ORIENTATION_TERMINATE"
+
+    def __init__(self, *args, sim, config, task, **kwargs):
+        self._sim = sim
+        self._config = config
+        self._task = task
+        super().__init__(*args, sim=sim, config=config, task=task, **kwargs)
+
+    @staticmethod
+    def _get_uuid(*args, **kwargs):
+        return OrientationTerminate.cls_uuid
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        upright_orientation = task.measurements.measures[
+            "UPRIGHT_ORIENTATION_DEVIATION_VALUE"
+        ].get_metric()
+        
+        if (upright_orientation < 0):
+            self._task.should_end = True
+            self._metric = True
+        else:
+            self._metric = False
+
+@registry.register_measure
 class CompositeAntReward(VirtualMeasure):
     """The measure calculates the error between current and target joint states"""
 
@@ -462,5 +494,9 @@ class CompositeAntReward(VirtualMeasure):
             #debugging: measure metrics will be None upon init
             #else:
             #    print(f"warning, {measure_uuid} is None")
-
+        orientation_terminate = task.measurements.measures[
+            OrientationTerminate.cls_uuid
+        ].get_metric()
+        if orientation_terminate:
+            reward -= 1000
         self._metric = reward

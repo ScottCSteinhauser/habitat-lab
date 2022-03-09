@@ -617,7 +617,26 @@ class AntV2Task(NavigationTask):
     def __init__(
         self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None
     ) -> None:
+        self.should_end = False
         super().__init__(config=config, sim=sim, dataset=dataset)
         
     def overwrite_sim_config(self, sim_config, episode):
         return merge_sim_episode_with_object_config(sim_config, episode)
+    
+    def reset(self, episode: Episode):
+        self.should_end = False
+        super().reset(episode=episode)
+        
+    
+    def _check_episode_is_active(
+        self,
+        *args: Any,
+        action: Union[int, Dict[str, Any]],
+        episode: Episode,
+        **kwargs: Any,
+    ) -> bool:
+
+        done = False
+        if self.should_end:
+            done = True
+        return not done
