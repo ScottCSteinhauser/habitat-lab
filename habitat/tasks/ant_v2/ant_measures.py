@@ -447,6 +447,10 @@ class OrientationTerminate(VirtualMeasure):
             "UPRIGHT_ORIENTATION_DEVIATION_VALUE"
         ].get_metric()
         
+        if upright_orientation is None:
+            #guard against initial None value for a measure
+            self._metric = False
+
         if (upright_orientation < 0):
             task.should_end = True
             self._metric = True
