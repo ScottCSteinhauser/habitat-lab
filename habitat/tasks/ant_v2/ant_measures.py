@@ -431,7 +431,7 @@ class OrientationTerminate(VirtualMeasure):
     def reset_metric(self, *args, episode, task, observations, **kwargs):
         task.measurements.check_measure_dependencies(
             self.uuid,
-            "UPRIGHT_ORIENTATION_DEVIATION_VALUE",
+            ["UPRIGHT_ORIENTATION_DEVIATION_VALUE"],
         )
 
         self.update_metric(
