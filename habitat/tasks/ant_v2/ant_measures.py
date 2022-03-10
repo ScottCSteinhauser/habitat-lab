@@ -450,6 +450,7 @@ class OrientationTerminate(VirtualMeasure):
         if upright_orientation is None:
             #guard against initial None value for a measure
             self._metric = False
+            return
 
         if (upright_orientation < 0):
             task.should_end = True
