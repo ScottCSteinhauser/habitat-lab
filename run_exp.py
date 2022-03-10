@@ -537,7 +537,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_GAIT_DEVIATION]"
             " TASK.ACTIONS.LEG_ACTION_GAIT_DEVIATION.DELTA_POS_LIMIT 0.5" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.075" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
             " TASK.ACTION_SMOOTHNESS.WINDOW 10" + 
@@ -547,7 +546,9 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,2.0,2.0,2.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.075",
     },
     "ant_orientation_alignment_withgait_turn_right_v7":{
         "description": "Try teaching the ant to orient with a constant vector.",
@@ -555,7 +556,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_GAIT_DEVIATION]"
             " TASK.ACTIONS.LEG_ACTION_GAIT_DEVIATION.DELTA_POS_LIMIT 0.8" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.05" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
             " TASK.ACTION_SMOOTHNESS.WINDOW 10" + 
@@ -565,7 +565,9 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,2.0,2.0,2.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.05",
     },
     "ant_orientation_alignment_withgait_turn_right_v8":{
         "description": "Try teaching the ant to orient with a constant vector.",
@@ -573,7 +575,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_GAIT_DEVIATION]"
             " TASK.ACTIONS.LEG_ACTION_GAIT_DEVIATION.DELTA_POS_LIMIT 0.5" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.075" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
             " TASK.ACTION_SMOOTHNESS.WINDOW 10" + 
@@ -583,7 +584,9 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,2.0,4.0,2.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.075",
     },
     "ant_train_gait_v3":{
         "description": "Try teaching the ant to walk with a natural gait.",
@@ -591,7 +594,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION]"
             " TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.3" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -601,7 +603,9 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     "ant_train_gait_v4":{
         "description": "Try teaching the ant to walk with a natural gait.",
@@ -609,7 +613,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION]"
             " TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.3" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -619,14 +622,15 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [2.0,2.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     "ant_train_gait_abscontroller_v1":{
         "description": "Try teaching the ant to walk with a natural gait.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_ABS]"
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -636,14 +640,15 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     "ant_train_gait_abscontroller_v2":{
         "description": "Try teaching the ant to walk with a natural gait.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_ABS]"
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -653,7 +658,9 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [2.0,2.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+       "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     "ant_train_gait_orientation_right_relcontroller_v1":{
         "description": "Try teaching the ant to walk with a natural gait and turn to the right.",
@@ -661,7 +668,6 @@ experiments: Dict[str, Dict[str,str]] = {
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION]"
             " TASK.ACTIONS.LEG_ACTION.DELTA_POS_LIMIT 0.3" + 
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -672,14 +678,15 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,1.0,1.0,1.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     "ant_train_gait_orientation_right_abscontroller_v1":{
         "description": "Try teaching the ant to walk with a natural gait and turn to the right.",
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": " \""+
             "TASK.POSSIBLE_ACTIONS [LEG_ACTION_ABS]"
-            #" RL.POLICY.ACTION_DIST.max_std = 0.1" + 
             " SIMULATOR.LEG_TARGET_STATE \"NATURAL_GAIT\""
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS 10" + 
             " TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS 10" + 
@@ -690,11 +697,14 @@ experiments: Dict[str, Dict[str,str]] = {
             " TASK.COMPOSITE_ANT_REWARD.WEIGHTS [1.0,1.0,1.0,1.0,1.0,1.0]"+
             " TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS [ORIENTATION_TERMINATE]"+
             "\"",
-        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD RL.PPO.clip_param 0.1",
+        "overrides": " RL.SUCCESS_MEASURE COMPOSITE_ANT_REWARD RL.REWARD_MEASURE COMPOSITE_ANT_REWARD"
+            +" RL.PPO.clip_param 0.1"
+            +" RL.POLICY.ACTION_DIST.max_std = 0.1",
     },
     
 }
-
+#copy paste template for running experiments
+#python run_exp.py --exp ant_orientation_alignment__withgait_d0.1_v4 --type train
 
 run_types = ["eval", "train"]
 run_base = "python -u habitat_baselines/run.py"
