@@ -624,8 +624,8 @@ class AntV2Task(NavigationTask):
         return merge_sim_episode_with_object_config(sim_config, episode)
     
     def reset(self, episode: Episode):
-        super().reset(episode=episode)
         self.should_end = False
+        return super().reset(episode=episode)
         
     
     def _check_episode_is_active(
