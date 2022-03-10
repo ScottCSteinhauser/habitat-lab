@@ -474,6 +474,9 @@ class CompositeAntReward(VirtualMeasure):
         self.active_measure_weights = {}
         for i,measure_uuid in enumerate(self.measure_dependencies):
             self.active_measure_weights[measure_uuid] = float(config.WEIGHTS[i])
+
+        #now add additional dependencies
+        self.measure_dependencies.extend(config.ADDITIONAL_REQUIREMENTS)
         
         super().__init__(sim, config, args)
 
@@ -503,9 +506,12 @@ class CompositeAntReward(VirtualMeasure):
             #debugging: measure metrics will be None upon init
             #else:
             #    print(f"warning, {measure_uuid} is None")
-        orientation_terminate = task.measurements.measures[
-            OrientationTerminate.cls_uuid
-        ].get_metric()
-        if orientation_terminate:
-            reward -= 1000
+        
+        #orientation termination penalty if configured
+        if OrientationTerminate.cls_uuid in self.measure_dependencies:
+            orientation_terminate = task.measurements.measures[
+                OrientationTerminate.cls_uuid
+            ].get_metric()
+            if orientation_terminate:
+                reward -= 1000
         self._metric = reward

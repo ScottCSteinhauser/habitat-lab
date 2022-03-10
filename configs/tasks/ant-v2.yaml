@@ -138,6 +138,8 @@ TASK:
     TYPE: "CompositeAntReward"
     #setting up the defaults here
     COMPONENTS: ["ACTION_COST_PRODUCT","JOINT_STATE_ERROR","X_LOCATION"]
+    #add additional requirements such as binary termination measures here:
+    ADDITIONAL_REQUIREMENTS: []
     WEIGHTS: [1.0, 1.0, 10.0]
   UPRIGHT_ORIENTATION_DEVIATION_VALUE:
     TYPE: "VectorAlignmentValue"
