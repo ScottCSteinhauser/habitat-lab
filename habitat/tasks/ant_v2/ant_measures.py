@@ -426,12 +426,21 @@ class OrientationTerminate(VirtualMeasure):
     def __init__(self, *args, sim, config, task, **kwargs):
         self._sim = sim
         self._config = config
-        self._task = task
         super().__init__(*args, sim=sim, config=config, task=task, **kwargs)
 
-    @staticmethod
-    def _get_uuid(*args, **kwargs):
-        return OrientationTerminate.cls_uuid
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        task.measurements.check_measure_dependencies(
+            self.uuid,
+            "UPRIGHT_ORIENTATION_DEVIATION_VALUE",
+        )
+
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs
+        )
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
         upright_orientation = task.measurements.measures[
@@ -439,7 +448,7 @@ class OrientationTerminate(VirtualMeasure):
         ].get_metric()
         
         if (upright_orientation < 0):
-            self._task.should_end = True
+            task.should_end = True
             self._metric = True
         else:
             self._metric = False
