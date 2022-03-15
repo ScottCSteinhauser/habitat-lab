@@ -36,7 +36,7 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.PPO.clip_param": "0.1",
             "RL.POLICY.ACTION_DIST.max_std": "0.1"
         }
-    }
+    },
     
 }
 #copy paste template for running experiments
@@ -106,6 +106,11 @@ def run(experiment=None, run_type="train", testing=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--get-cmds", 
+        action="store_true",
+        help="Instead of running, export a list of run commands for easy copy-paste."
+    )
+    parser.add_argument(
         "--type",
         choices=["train", "eval"],
         required=True,
@@ -114,10 +119,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--exp",
         type=str,
-        required=True,
         help="name of the experiment as defined in the experiments dict",
     )
     parser.add_argument("--test", action="store_true", help="If provided, sets mini-batches to 1 and environments to 1 for easy debugging.")
 
     args = parser.parse_args()
-    run(experiment=args.exp, run_type=args.type, testing=args.test)
+
+    if args.get_cmds:
+        #print copy template run commands
+        print("============================================================")
+        print(" Run Command Templates: ")
+        print("------------------------------------------------------------")
+        run_cmd_prefix = "python run_exp.py --exp "
+        run_cmd_postfix = " --type " + args.type 
+        for exp_name in experiments.keys():
+            print(run_cmd_prefix + exp_name + run_cmd_postfix)
+        print("============================================================")
+    else:
+        run(experiment=args.exp, run_type=args.type, testing=args.test)
