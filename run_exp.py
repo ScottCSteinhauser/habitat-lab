@@ -1,5 +1,7 @@
 import os
 import argparse
+import json
+import copy
 from typing import Dict
 
 #--------------------------------------------------------
@@ -16,7 +18,7 @@ experiments: Dict[str, Dict[str,str]] = {
     #     "task_overrides": {}, #overrides to the task config
     #     "overrides": {}, #overrides to the learning config
     # }
-    "ant_train_gait_orientation_right_abscontroller_template":{
+    "ant_train_gait_orientation_template":{
         "description": "Try teaching the ant to walk with a natural gait and turn to the right.",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
@@ -25,7 +27,6 @@ experiments: Dict[str, Dict[str,str]] = {
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10",
             "TASK.ACTION_SMOOTHNESS.WINDOW": "10",
             "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
-            "SIMULATOR.TARGET_VECTOR": "[0.0,0.0,1.0]",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
             "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0,1.0]",
             "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]"
@@ -37,10 +38,95 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.POLICY.ACTION_DIST.max_std": "0.1"
         }
     },
-    
+    "ant_train_gait_abscontroller_base":{
+        "description": "Try teaching the ant to walk with a natural gait and absolute position actions.",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
+            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
+        },
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.PPO.clip_param": "0.1",
+            "RL.POLICY.ACTION_DIST.max_std": "0.1",
+        }
+    },
 }
-#copy paste template for running experiments
-#python run_exp.py --exp ant_train_gait_orientation_right_abscontroller_v1 --type train
+
+#variations of base experiments:
+experiment_variations: Dict[str, Dict[str,str]] = {
+    #abs gait imitation max_std variations
+    "ant_train_gait_abscontroller_var_v1":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.01"},
+    },
+    "ant_train_gait_abscontroller_var_v2":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.025"},
+    },
+    "ant_train_gait_abscontroller_var_v3":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    "ant_train_gait_abscontroller_var_v4":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.06"},
+    },
+    "ant_train_gait_abscontroller_var_v5":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.075"},
+    },
+    #rel gait imitation + turning variations
+    "ant_train_gait_orientation_rel_v1":{
+        "base_experiment": "ant_train_gait_orientation_template",
+        "task_overrides":{"TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]"},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.1"},
+    },
+    "ant_train_gait_orientation_rel_v2":{
+        "base_experiment": "ant_train_gait_orientation_template",
+        "task_overrides":{
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,2.0,2.0,1.0,1.0,1.0]",
+            },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.1"},
+    },
+    #rel gait imitation + turning variations (hypothesis that 0.02 is good max_std)
+    "ant_train_gait_orientation_abs_v1":{
+        "base_experiment": "ant_train_gait_orientation_template",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.02"},
+    },
+    "ant_train_gait_orientation_abs_v2":{
+        "base_experiment": "ant_train_gait_orientation_template",
+        "task_overrides":{
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,2.0,2.0,1.0,1.0,1.0]",
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.02"},
+    },
+}
+
+#merge variations into experiments
+for var,var_info in experiment_variations.items():
+    experiments[var] = copy.deepcopy(experiments[var_info["base_experiment"]])
+    for override_type in ("task_overrides", "overrides"):
+        for key,val in var_info[override_type].items():
+            experiments[var][override_type][key] = val
+
+#NOTE: use this to check the final dict results:
+#print(json.dumps(experiments, indent=4))
+#exit()
 
 run_types = ["eval", "train"]
 run_base = "python -u habitat_baselines/run.py"
