@@ -132,7 +132,7 @@ run_types = ["eval", "train"]
 run_base = "python -u habitat_baselines/run.py"
 
 
-def run(experiment=None, run_type="train", testing=False):
+def run(experiment=None, run_type="train", testing=False, quick_eval=False):
     assert experiment in experiments
     assert run_type in run_types
 
@@ -176,6 +176,8 @@ def run(experiment=None, run_type="train", testing=False):
         if not testing:
             #NOTE: number of videos/data_points you want
             overrides += " NUM_ENVIRONMENTS 3"
+        if quick_eval:
+            overrides += " EVAL.CKPT_INC 10"
 
     #settings for easier debugging
     if testing:
@@ -198,9 +200,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--type",
-        choices=["train", "eval"],
+        choices=["train", "eval", "quick-eval"],
         required=True,
-        help="run type of the experiment (train or eval)",
+        help="run type of the experiment (train, eval, or quick-eval (increments of 10))",
     )
     parser.add_argument(
         "--exp",
@@ -222,4 +224,5 @@ if __name__ == "__main__":
             print(run_cmd_prefix + exp_name + run_cmd_postfix)
         print("============================================================")
     else:
-        run(experiment=args.exp, run_type=args.type, testing=args.test)
+        run_type = "eval" if args.type in ["eval", "quick-eval"] else "train"
+        run(experiment=args.exp, run_type=run_type, testing=args.test, quick_eval=(args.type == "quick-eval"))

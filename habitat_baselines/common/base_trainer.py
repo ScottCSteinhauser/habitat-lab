@@ -113,7 +113,7 @@ class BaseTrainer:
                 )
             else:
                 # evaluate multiple checkpoints in order
-                prev_ckpt_ind = -1
+                prev_ckpt_ind = max(-1, self.config.EVAL.CKPT_START -1)
                 while True:
                     current_ckpt = None
                     while current_ckpt is None:
@@ -122,7 +122,7 @@ class BaseTrainer:
                         )
                         time.sleep(2)  # sleep for 2 secs before polling again
                     logger.info(f"=======current_ckpt: {current_ckpt}=======")
-                    prev_ckpt_ind += 1
+                    prev_ckpt_ind += self.config.EVAL.CKPT_INC
                     self._eval_checkpoint(
                         checkpoint_path=current_ckpt,
                         writer=writer,

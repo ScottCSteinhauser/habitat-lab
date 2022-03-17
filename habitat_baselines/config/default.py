@@ -60,6 +60,10 @@ _C.EVAL = CN()
 # The split to evaluate on
 _C.EVAL.SPLIT = "val"
 _C.EVAL.USE_CKPT_CONFIG = True
+# How many checkpoints to increment between evaluations
+_C.EVAL.CKPT_INC = 1
+# Which checkpoint to start at
+_C.EVAL.CKPT_START = 0
 # -----------------------------------------------------------------------------
 # REINFORCEMENT LEARNING (RL) ENVIRONMENT CONFIG
 # -----------------------------------------------------------------------------
