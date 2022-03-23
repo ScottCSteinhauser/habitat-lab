@@ -58,6 +58,46 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.POLICY.ACTION_DIST.max_std": "0.1",
         }
     },
+    "ant_flat_position_base":{
+        "description": "Try teaching the ant to flatten itself.",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+            "SIMULATOR.LEG_TARGET_STATE": "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
+            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
+        },
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.PPO.clip_param": "0.1",
+            "RL.POLICY.ACTION_DIST.max_std": "0.1",
+        }
+    },
+    "ant_delta_x_base":{
+        "description": "Try teaching the ant to walk forward with no guidance.",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_REL]",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
+            "SIMULATOR.TARGET_VECTOR": "[1.0,0.0,0.0]",
+            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,5.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",        
+            },
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.PPO.clip_param": "0.1",
+            "RL.POLICY.ACTION_DIST.max_std": "0.1",
+        }
+    },
 }
 
 #variations of base experiments:
@@ -115,6 +155,48 @@ experiment_variations: Dict[str, Dict[str,str]] = {
         },
         "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.02"},
     },
+    
+    # -- experiments for undergraduate thesis --
+    
+    # Joint Regression to flat state
+    # Try using Rel position controller
+    "ant_flat_position_base_v1":{
+        "base_experiment": "ant_flat_position_base",
+        "task_overrides":{
+            "task_overrides":{"TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]"},
+        },
+        "overrides": {},
+    },
+    
+    
+    # X Delta
+    "ant_delta_x_rel_v1":{
+        "base_experiment": "ant_delta_x_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.07"},
+    },
+    "ant_delta_x_rel_v2":{
+        "base_experiment": "ant_delta_x_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    
+    # use abs controller
+    "ant_delta_x_abs_v1":{
+        "base_experiment": "ant_delta_x_base",
+        "task_overrides":{
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.07"},
+    },
+    "ant_delta_x_abs_v2":{
+        "base_experiment": "ant_delta_x_base",
+        "task_overrides":{
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    
 }
 
 #merge variations into experiments
