@@ -81,7 +81,7 @@ experiments: Dict[str, Dict[str,str]] = {
     "ant_delta_x_base":{
         "description": "Try teaching the ant to walk forward with no guidance.",
         "task_overrides": {
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_REL]",
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
             "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
