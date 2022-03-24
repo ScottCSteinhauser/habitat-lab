@@ -163,7 +163,7 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_flat_position_base_v1":{
         "base_experiment": "ant_flat_position_base",
         "task_overrides":{
-            "task_overrides":{"TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]"},
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
         },
         "overrides": {},
     },
