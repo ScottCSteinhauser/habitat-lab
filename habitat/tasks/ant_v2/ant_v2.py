@@ -246,8 +246,6 @@ class AntV2Sim(HabitatSim):
             # create object config for the cubes
             
             
-            
-            
             obstacles = []
             if self.load_corridor:
                 for i in range(2):

@@ -98,6 +98,26 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.POLICY.ACTION_DIST.max_std": "0.1",
         }
     },
+    "ant_delta_x_abs_base":{
+        "description": "Try teaching the ant to walk forward with no guidance.",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
+            "SIMULATOR.TARGET_VECTOR": "[1.0,0.0,0.0]",
+            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,X_LOCATION,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[VECTOR_ROOT_DELTA,X_LOCATION,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[100.0,1.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",        
+            },
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.PPO.clip_param": "0.1",
+            "RL.POLICY.ACTION_DIST.max_std": "0.1",
+        }
+    },
 }
 
 #variations of base experiments:
@@ -196,6 +216,49 @@ experiment_variations: Dict[str, Dict[str,str]] = {
         },
         "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
     },
+    
+    # Need to change vector_root_delta to x_delta
+    "ant_flat_position_base_v2":{
+        "base_experiment": "ant_flat_position_base",
+        "task_overrides":{
+            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True"
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    
+    "ant_flat_position_base_v3":{
+        "base_experiment": "ant_flat_position_base",
+        "task_overrides":{
+            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True"
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.01"},
+    },
+    
+    # use abs controller
+    "ant_delta_x_abs_v3":{
+        "base_experiment": "ant_delta_x_abs_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.03"},
+    },
+    "ant_delta_x_abs_v4":{
+        "base_experiment": "ant_delta_x_abs_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    "ant_delta_x_abs_v5":{
+        "base_experiment": "ant_delta_x_abs_base",
+        "task_overrides":{},
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.05"},
+    },
+    # Try even smoother actions
+    "ant_delta_x_abs_v6":{
+        "base_experiment": "ant_delta_x_abs_base",
+        "task_overrides":{
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[100.0,1.0,5.0]",    
+        },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    
     
 }
 
