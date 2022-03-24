@@ -43,7 +43,8 @@ SIMULATOR:
   #NOTE: these below are unused
   #AC_FREQ_RATIO: 4
 
-  # LOAD_OBSTACLES: True # Loads obstacles for the ant to avoid
+  LOAD_OBSTACLES: False # Loads obstacles for the ant to avoid
+  LOAD_CORRIDOR: True # Loads obstacles for the ant to avoid
 
   HABITAT_SIM_V0:
     ALLOW_SLIDING: True

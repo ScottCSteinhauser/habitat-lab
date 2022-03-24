@@ -8,6 +8,7 @@ import math
 from collections import defaultdict, OrderedDict
 from typing import Any, List, Optional, Tuple, Dict, Union
 import random
+import os
 
 import attr
 import numpy as np
@@ -59,6 +60,7 @@ except ImportError:
 from habitat.tasks.ant_v2.ant_robot import AntV2Robot
 from habitat.tasks.ant_v2.ant_v2_sim_debug_utils import AntV2SimDebugVisualizer
 
+data_path = "./data"
 
 def merge_sim_episode_with_object_config(sim_config, episode):
     sim_config.defrost()
@@ -127,9 +129,8 @@ class AntV2Sim(HabitatSim):
         self.ctrl_freq = agent_config.CTRL_FREQ
         self.elapsed_steps = None
         
-        self.load_obstacles = False
-        # self.load_obstacles = agent_config.LOAD_OBSTACLES # Not working during training!
-
+        self.load_obstacles = agent_config.LOAD_OBSTACLES
+        self.load_corridor = agent_config.LOAD_CORRIDOR
 
         self.art_objs = []
         self.start_art_states = {}
@@ -211,26 +212,58 @@ class AntV2Sim(HabitatSim):
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
             floor = obj_templates_mgr.get_template_by_handle(cube_handle)
             #should be thicker than 0.08 for better collision margin stability
-            floor.scale = np.array([20.0, 0.1, 20.0])
+            floor.scale = np.array([30.0, 0.1, 30.0])
 
             obj_templates_mgr.register_template(floor, "floor")
             floor_obj = rigid_obj_mgr.add_object_by_template_handle("floor")
-            floor_obj.translation = np.array([2.50, -1, 0.5])
+            floor_obj.translation = np.array([0.0, -1, 0.0])
             floor_obj.motion_type = habitat_sim.physics.MotionType.STATIC
             
+            
+            # create cubes templates
+            
+            red_cube_id = obj_templates_mgr.load_configs(
+                str(os.path.join(data_path, "colored_cubes/red_cube"))
+            )[0]
+            red_cube_template = obj_templates_mgr.get_template_by_id(red_cube_id)
+            red_cube_template.scale = [0.1, 3.0, 0.8]
+            obj_templates_mgr.register_template(red_cube_template, "red_obstacle")
+            
+            green_cube_id = obj_templates_mgr.load_configs(
+                str(os.path.join(data_path, "colored_cubes/green_cube"))
+            )[0]
+            green_cube_template = obj_templates_mgr.get_template_by_id(green_cube_id)
+            green_cube_template.scale = [0.1, 3.0, 2.0]
+            obj_templates_mgr.register_template(green_cube_template, "green_target")
+            
+            blue_cube_id = obj_templates_mgr.load_configs(
+                str(os.path.join(data_path, "colored_cubes/blue_cube"))
+            )[0]
+            blue_cube_template = obj_templates_mgr.get_template_by_id(blue_cube_id)
+            blue_cube_template.scale = [30.0, 3.0, 0.1]
+            obj_templates_mgr.register_template(blue_cube_template, "blue_wall")
+
+            # create object config for the cubes
+            
+            
+            
+            
             obstacles = []
+            if self.load_corridor:
+                for i in range(2):
+                    wall_obj = rigid_obj_mgr.add_object_by_template_handle("blue_wall")
+                    wall_obj.translation = np.array([0.0, 0.5, 2.0 * (1 - 2 * (i % 2))])
+                    wall_obj.motion_type = habitat_sim.physics.MotionType.STATIC
+                green_target_obj = rigid_obj_mgr.add_object_by_template_handle("green_target")
+                green_target_obj.translation = np.array([20.0, 0.5, 0.0])
+                green_target_obj.motion_type = habitat_sim.physics.MotionType.STATIC
             if self.load_obstacles:
                 # load periodically placed obstacles
-                # add floor
-                cube_obstacle = obj_templates_mgr.get_template_by_handle(cube_handle)
-                cube_obstacle.scale = np.array([0.1, 1, 4.8])
-                # TODO: COLOR OBSTACLE RED
-                obj_templates_mgr.register_template(cube_obstacle, "cube_obstacle")
                 
                 for i in range(6):
-                    obstacles.append(rigid_obj_mgr.add_object_by_template_handle("cube_obstacle"))
+                    obstacles.append(rigid_obj_mgr.add_object_by_template_handle("red_obstacle"))
                     obstacles[-1].motion_type = habitat_sim.physics.MotionType.KINEMATIC
-                    obstacles[-1].translation = np.array([i*3 + 2, -0.5, 5 * (1 - 2 * (i % 2))])
+                    obstacles[-1].translation = np.array([i*3 + 2, 0.5, 1.2 * (1 - 2 * (i % 2))])
                     obstacles[-1].motion_type = habitat_sim.physics.MotionType.STATIC
                     
                     
