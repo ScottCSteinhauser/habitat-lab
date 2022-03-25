@@ -33,7 +33,7 @@ SIMULATOR:
   CTRL_FREQ: 30
 
   # LEG TARGET
-  LEG_TARGET_STATE: [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # "NATURAL_GAIT" #
+  LEG_TARGET_STATE: "NATURAL_GAIT" # [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # 
 
   #Target vector for the ant to progress towards, vector must be normalized
   TARGET_VECTOR: [1.0, 0.0, 0.0] # "RANDOM" #
