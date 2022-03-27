@@ -29,6 +29,10 @@ SIMULATOR:
         NORMALIZE_DEPTH: True
   ROBOT_URDF: data/robots/ant.urdf
   
+  SHOW_GHOST_ROBOT: True
+  GHOST_ROBOT_URDF: data/robots/ant_blue.urdf # optional; used for visualizing how close the robot tracks some target gait/pose
+  GHOST_ROBOT_OFFSET: [0.0, 0.0, 1.5]
+
   #NOTE: control frequency in Hz. Physics stepped at 1/CTRL_FREQ
   CTRL_FREQ: 30
 

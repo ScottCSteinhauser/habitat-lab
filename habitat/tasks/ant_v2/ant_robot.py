@@ -71,8 +71,16 @@ class AntV2Robot(QuadrupedRobot):
 
     @property
     def base_transformation(self):
+        """Get the robot base ground position via configured local offset from origin."""
         add_rot = mn.Matrix4.rotation(mn.Rad(-np.pi / 2), mn.Vector3(1.0, 0, 0))
         return self.sim_obj.transformation @ add_rot
+
+    @base_transformation.setter
+    def base_transformation(self, transform):
+        """Set the robot base to a desired ground position (e.g. NavMesh point) via configured local offset from origin."""
+        add_rot = mn.Matrix4.rotation(mn.Rad(np.pi / 2), mn.Vector3(1.0, 0, 0))
+        self.sim_obj.transformation = transform @ add_rot
+
 
     def update(self):
         super().update()

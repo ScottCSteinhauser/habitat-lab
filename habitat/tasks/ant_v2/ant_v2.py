@@ -48,6 +48,9 @@ try:
     from habitat.sims.habitat_simulator.habitat_simulator import HabitatSim
     from habitat_sim import RigidState
     from habitat_sim.physics import VelocityControl
+    from habitat_sim.physics import MotionType
+    from habitat_sim.physics import CollisionGroups
+    
 except ImportError:
     pass
 
@@ -82,6 +85,7 @@ class AntV2Sim(HabitatSim):
         self.prev_scene_id = None
         self.enable_physics = True
         self.robot = None
+        self.ghost_robot = None # This is used for visualizing how well the agent tracks some desired pose/gait
         
         # The leg target state for the ant
         self.leg_target_state = None
@@ -207,7 +211,7 @@ class AntV2Sim(HabitatSim):
                 self.robot.base_rot = self.ant_rotation
                 
             self.prev_robot_transformation = self.robot.base_transformation
-
+            
             # add floor
             cube_handle = obj_templates_mgr.get_template_handles("cube")[0]
             floor = obj_templates_mgr.get_template_by_handle(cube_handle)
@@ -282,6 +286,17 @@ class AntV2Sim(HabitatSim):
                 
             self.prev_robot_transformation = self.robot.base_transformation
         self.elapsed_steps = 0
+        
+        # if in eval mode, create an ghost ant. Otherwise, remove it if it exists.
+        if self.is_eval and self.habitat_config.SHOW_GHOST_ROBOT:
+            if not self.ghost_robot:
+                self.ghost_robot = AntV2Robot(self.habitat_config.GHOST_ROBOT_URDF, self)
+            self.ghost_robot.reconfigure()
+            self.ghost_robot.sim_obj.override_collision_group(CollisionGroups.Noncollidable)
+            self.ghost_robot.sim_obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
+            self.ghost_robot.base_transformation = mn.Matrix4.translation(mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)) @ self.robot.base_transformation
+            #self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.AGENT_0.START_POSITION) + self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)   
+        
 
     def step(self, action):
         # update joint target
@@ -300,6 +315,9 @@ class AntV2Sim(HabitatSim):
         self.prev_robot_transformation = self.robot.base_transformation
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
+            if self.habitat_config.SHOW_GHOST_ROBOT:
+                self.ghost_robot.base_transformation =  mn.Matrix4.translation(mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)) @ self.robot.base_transformation
+                self.ghost_robot.leg_joint_state = self.leg_target_state
 
         # returns new observation after step
         self._prev_sim_obs = self.get_sensor_observations()
@@ -320,8 +338,8 @@ class AntV2Sim(HabitatSim):
             ant_forward_vector = self.robot.base_transformation.transform_vector(mn.Vector3(1, 0, 0))
             self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), ant_forward_vector)
             # draw ant's target vector
-            tv = mn.Vector3(self.target_vector[0], self.target_vector[1], self.target_vector[2])
-            self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), tv, mn.Color4(0.3, 1.0, 0.3, 1.0))
+            #tv = mn.Vector3(self.target_vector[0], self.target_vector[1], self.target_vector[2])
+            #self.debug_visualizer.draw_vector(mn.Vector3(self.robot.base_pos), tv, mn.Color4(0.3, 1.0, 0.3, 1.0))
 
 @registry.register_sensor
 class AntObservationSpaceSensor(Sensor):
@@ -456,7 +474,6 @@ class AntObservationSpaceSensor(Sensor):
                 if contact.link_id_a in leg_indices.keys():
                     contacts[leg_indices[contact.link_id_a]] = 1
             obs_terms.extend(contacts)
-        #TODO: add terms for ego centric up(3), forward(3), target_velocity(3)
         if "EGOCENTRIC_LEG_POSITIONS" in self.config.ACTIVE_TERMS:
             # get positions of link ids 4, 9, 14, 19
             link_ids = [4, 9, 14, 19]

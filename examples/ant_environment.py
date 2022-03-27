@@ -66,9 +66,11 @@ def ant_environment_example():
     observations = []
     with habitat.Env(config=config) as env:
         env.reset()
+        steps = 0
+        joint_target = env._sim.robot.random_pose()
         while not env.episode_over:
             #print(env._sim.robot.sim_obj.joint_positions)
-            
+            steps += 1
             #sample random action for testing:
             action = env.action_space.sample()
             #override actions for testing:
@@ -82,6 +84,7 @@ def ant_environment_example():
             joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
             #print("target",joint_target)
             #set_action = np.array([1]*8) * 1.0 * ((step%2) * 2 - 1)
+            
             action['action_args']['leg_action'] = joint_target
             #print("action", action['action_args']['leg_action'])
             #for i in range(2):

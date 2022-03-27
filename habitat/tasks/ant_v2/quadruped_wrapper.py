@@ -277,7 +277,7 @@ class QuadrupedRobot(RobotInterface):
             position
             - self.sim_obj.transformation.transform_vector(self.params.base_offset)
         )
-
+    
     @property
     def base_rot(self) -> mn.Quaternion:
         return self.sim_obj.rotation
