@@ -387,6 +387,146 @@ experiment_variations: Dict[str, Dict[str,str]] = {
         "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
     },
     
+    # TESTING NEW SENSOR
+    "ant_train_gait_abscontroller_corridor_v9_TEST":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
+    },
+    
+    # Experiments with vision introduced
+    "ant_train_gait_abscontroller_corridor_vision_v1":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    "ant_train_gait_abscontroller_corridor_vision_v2":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    
+    # with forward X
+    "ant_train_gait_abscontroller_corridor_vision_v3":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    "ant_train_gait_abscontroller_corridor_vision_v4":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    
+    # with forward alignment
+    "ant_train_gait_abscontroller_corridor_vision_v5":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    "ant_train_gait_abscontroller_corridor_vision_v6":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    
+    # with x location and forward alignment
+    "ant_train_gait_abscontroller_corridor_vision_v7":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
+    "ant_train_gait_abscontroller_corridor_vision_v8":{ 
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
+            },
+        "overrides": {
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.num_steps": "600" 
+            },
+    },
 }
 
 #merge variations into experiments
@@ -444,7 +584,14 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False):
         overrides += " EVAL_CKPT_PATH_DIR data/checkpoints/" + experiment + "/"
         overrides += " VIDEO_DIR data/videos/" + experiment + "/"
         #NOTE: this adds the extra sensor for visualization
-        overrides += " SENSORS ['THIRD_SENSOR']"
+        if 'HEAD_RGB_SENSOR' in overrides:
+            # string replacement
+            sides = overrides.split("SENSORS ['HEAD_RGB_SENSOR']")
+            overrides = sides[0] + "SENSORS ['THIRD_SENSOR','HEAD_RGB_SENSOR']" + sides[1]
+        else:
+            overrides += " SENSORS ['THIRD_SENSOR']"
+            
+        
         if not testing:
             #NOTE: number of videos/data_points you want
             overrides += " NUM_ENVIRONMENTS 3"

@@ -138,27 +138,29 @@ class QuadrupedRobot(RobotInterface):
         agent_node = self._sim._default_agent.scene_node
         inv_T = agent_node.transformation.inverted()
 
-        # for cam_prefix, sensor_names in self._cameras.items():
-        #     for sensor_name in sensor_names:
-        #         sens_obj = self._sim._sensors[sensor_name]._sensor_object
-        #         cam_info = self.params.cameras[cam_prefix]
+        for cam_prefix, sensor_names in self._cameras.items():
+            for sensor_name in sensor_names:
+                if sensor_name == "robot_third": # We've been using robot_third as our primary camera stationary, maybe this should change?
+                    continue
+                sens_obj = self._sim._sensors[sensor_name]._sensor_object
+                cam_info = self.params.cameras[cam_prefix]
+                if cam_info.attached_link_id == -1:
+                    add_rot = mn.Matrix4.rotation(mn.Rad(-np.pi / 2), mn.Vector3(1.0, 0, 0))
+                    link_trans = self.sim_obj.transformation @ add_rot
+                else:
+                    link_trans = self.sim_obj.get_link_scene_node(
+                        self.params.ee_link
+                    ).transformation
 
-        #         if cam_info.attached_link_id == -1:
-        #             link_trans = self.sim_obj.transformation
-        #         else:
-        #             link_trans = self.sim_obj.get_link_scene_node(
-        #                 self.params.ee_link
-        #             ).transformation
+                cam_transform = mn.Matrix4.look_at(
+                    cam_info.cam_offset_pos,
+                    cam_info.cam_look_at_pos,
+                    mn.Vector3(0, 1, 0),
+                )
+                cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
+                cam_transform = inv_T @ cam_transform
 
-        #         cam_transform = mn.Matrix4.look_at(
-        #             cam_info.cam_offset_pos,
-        #             cam_info.cam_look_at_pos,
-        #             mn.Vector3(0, 1, 0),
-        #         )
-        #         cam_transform = link_trans @ cam_transform @ cam_info.relative_transform
-        #         cam_transform = inv_T @ cam_transform
-
-        #         sens_obj.node.transformation = cam_transform
+                sens_obj.node.transformation = cam_transform
 
         # Guard against out of limit joints
         # TODO: should auto clamping be enabled instead? How often should we clamp?

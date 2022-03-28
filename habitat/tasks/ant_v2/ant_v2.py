@@ -319,6 +319,9 @@ class AntV2Sim(HabitatSim):
                 self.ghost_robot.base_transformation =  mn.Matrix4.translation(mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)) @ self.robot.base_transformation
                 self.ghost_robot.leg_joint_state = self.leg_target_state
 
+        # update robot, including camera locations
+        self.robot.update()
+
         # returns new observation after step
         self._prev_sim_obs = self.get_sensor_observations()
         obs = self._sensor_suite.get_observations(self._prev_sim_obs)

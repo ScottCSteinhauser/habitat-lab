@@ -107,7 +107,7 @@ def ant_environment_example():
     
     vut.make_video(
         observations,
-        "robot_third",
+        "robot_third", # use "robot_head_rgb" to see 1st person view
         "color",
         "test_ant_wrapper",
         open_vid=True,
