@@ -295,7 +295,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v1":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "False",
             },
@@ -305,7 +304,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v2":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "True",
             },
@@ -316,7 +314,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v3":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "False",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
@@ -328,7 +325,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v4":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "True",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
@@ -341,7 +337,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v5":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "False",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
@@ -353,7 +348,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v6":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "True",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
@@ -366,7 +360,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v7":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "False",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
@@ -378,7 +371,6 @@ experiment_variations: Dict[str, Dict[str,str]] = {
     "ant_train_gait_abscontroller_corridor_v8":{
         "base_experiment": "ant_train_gait_abscontroller_base",
         "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "True",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
