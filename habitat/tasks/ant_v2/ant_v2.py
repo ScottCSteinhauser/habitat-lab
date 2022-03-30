@@ -301,17 +301,19 @@ class AntV2Sim(HabitatSim):
     def step(self, action):
         # update joint target
         if self.leg_target_state_type == "NATURAL_GAIT":
-            t = math.fmod(self.get_world_time(), 1.0)
-            self.leg_target_state = self.robot.natural_walking_gait_at(t, 0.23, -0.26, 0.775)
-            
-            next_t = math.fmod(self.get_world_time() + 1.0 / self.ctrl_freq, 1.0)
-            self.next_leg_target_state = self.robot.natural_walking_gait_at(next_t, 0.23, -0.26, 0.775)
+            self.leg_target_state = self.robot.natural_walking_gait_at(self.elapsed_steps, self.ctrl_freq, 0.23, -0.26, 0.775)
+
+            self.next_leg_target_state = self.robot.natural_walking_gait_at(self.elapsed_steps + 1, self.ctrl_freq, 0.23, -0.26, 0.775)
         
         # add robot joint position to history
         self.joint_position_history.append(self.robot.leg_joint_state)
         
         #cache the position before updating
-        self.step_physics(1.0 / self.ctrl_freq)
+        t_prev = self.get_world_time()
+        target_world_time = (self.elapsed_steps + 1) / self.ctrl_freq
+
+        self.step_world(target_world_time - t_prev)
+
         self.prev_robot_transformation = self.robot.base_transformation
         if self.is_eval:
             self.robot_root_path.append(self.robot.base_pos)
@@ -478,15 +480,7 @@ class AntObservationSpaceSensor(Sensor):
                     contacts[leg_indices[contact.link_id_a]] = 1
             obs_terms.extend(contacts)
         if "EGOCENTRIC_LEG_POSITIONS" in self.config.ACTIVE_TERMS:
-            # get positions of link ids 4, 9, 14, 19
-            link_ids = [4, 9, 14, 19]
-            link_local_ankles = [mn.Vector3(0.25, -0.25, 0), mn.Vector3(0.25,0.25,0.0), mn.Vector3(-0.25, 0.25, 0), mn.Vector3(-0.25,-0.25,0.0)]
-            local_ankle = mn.Vector3(0,0,0) # should eventually be the end of the leg
-            for i, link_id in enumerate(link_ids):
-                link = self._sim.robot.sim_obj.get_link_scene_node(link_id)
-                global_ankle_location = link.transformation_matrix().transform_point(link_local_ankles[i])
-                egocentric_ankle_location = self._sim.robot.base_transformation.inverted().transform_point(global_ankle_location)
-                obs_terms.extend([x for x in list(egocentric_ankle_location)])
+            obs_terms.extend(self._sim.robot.end_effector_positions())
             
             
         return np.array(obs_terms)
@@ -624,11 +618,12 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         delta_pos *= self._config.DELTA_POS_LIMIT
         
         self._sim: AntV2Sim
+        
         #clip the motor targets to the joint range
-        t = math.fmod(self._sim.get_world_time(), 1.0)
-
-        natural_ant_gait = self._sim.robot.natural_walking_gait_at(t, 0.23, -0.26, 0.775)
-                
+        frame = self._sim.elapsed_steps
+        ctrl_freq = self._sim.ctrl_freq
+        natural_ant_gait = self._sim.robot.natural_walking_gait_at(frame, ctrl_freq, 0.23, -0.26, 0.775)
+        
         self._sim.robot.leg_joint_pos = np.clip(natural_ant_gait + delta_pos, self._sim.robot.joint_limits[0], self._sim.robot.joint_limits[1])
         
         if should_step:

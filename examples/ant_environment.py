@@ -70,7 +70,6 @@ def ant_environment_example():
         joint_target = env._sim.robot.random_pose()
         while not env.episode_over:
             #print(env._sim.robot.sim_obj.joint_positions)
-            steps += 1
             #sample random action for testing:
             action = env.action_space.sample()
             #override actions for testing:
@@ -81,7 +80,16 @@ def ant_environment_example():
             #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
             #joint_target = env._sim.robot.random_pose()
             #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
-            joint_target = periodic_leg_motion_at(math.fmod(env._sim.get_world_time(), 1.0), 0.23, -0.26, 0.775)
+            joint_target = env._sim.robot.natural_walking_gait_at(steps, 30, 0.23, -0.26, 0.775)
+            
+            #print("{:.3f}".format(env._sim.get_world_time() - 1) + ": " + str(env._sim.robot.end_effector_positions()) + ",")
+            
+            #print(str(steps % 30) + ": " + str(env._sim.robot.end_effector_positions()) + ",")
+            #print(str(steps % 30) + ": " + str(env._sim.robot.joint_velocities) + ",")
+            #print(str(steps % 30) + ": " + str(list(joint_target)) + ",")
+            
+            # print(env._sim.robot.end_effector_positions() - env._sim.robot.natural_gait_end_effector_position(steps))
+            
             #print("target",joint_target)
             #set_action = np.array([1]*8) * 1.0 * ((step%2) * 2 - 1)
             
@@ -90,8 +98,11 @@ def ant_environment_example():
             #for i in range(2):
             #    action = env.action_space.sample()
             obs = env.step(action)
+            steps += 1
+            
             #print(obs['ant_observation_space_sensor'])
             observations.append(obs)
+            
             # keystroke = cv2.waitKey(0)
             
             #print(f"observational_space = {env._sim.observational_space}")

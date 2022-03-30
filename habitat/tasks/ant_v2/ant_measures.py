@@ -255,6 +255,102 @@ class JointStateProductError(VirtualMeasure):
         #print(self._metric)
 
 @registry.register_measure
+class DeepMimicPoseReward(VirtualMeasure):
+    """The measure calculates the error between current and target joint states, specifically a pose. Based on Deep Mimic"""
+
+    cls_uuid: str = "POSE_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        self.target_state = self._sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+ 
+        if self._metric is None:
+            self._metric = None
+
+        current_state = self._sim.robot.leg_joint_pos
+
+        difference = current_state - self.target_state
+
+        self._metric = np.exp(-2 * np.sum(np.square(difference)))
+        
+        #print(self.cls_uuid, self._metric)
+        
+@registry.register_measure
+class DeepMimicJointVelocityReward(VirtualMeasure):
+    """The measure calculates the error between current and target joint velocities, specifically for the natural gait. Based on Deep Mimic"""
+
+    cls_uuid: str = "DEEP_MIMIC_JOINT_VELOCITY_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        target_velocities = self._sim.robot.natural_gait_joint_velocities(self._sim.elapsed_steps)
+        current_velocities = self._sim.robot.joint_velocities
+
+        difference = current_velocities - target_velocities
+
+        self._metric = np.exp(-0.1 * np.sum(np.square(difference)))
+        
+        #print(self.cls_uuid, self._metric)
+
+@registry.register_measure
+class DeepMimicEndEffectorPositionReward(VirtualMeasure):
+    """The measure calculates the error between current and target end_effector_positions (feet locations), specifically for the natural gait. Based on Deep Mimic"""
+
+    cls_uuid: str = "DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        target_end_effector_positions = self._sim.robot.natural_gait_end_effector_position(self._sim.elapsed_steps)
+        current_end_effector_positions = self._sim.robot.end_effector_positions()
+
+        difference = current_end_effector_positions - target_end_effector_positions
+
+        self._metric = np.exp(-40 * np.sum(np.square(difference)))
+        
+        #print(self.cls_uuid, self._metric)
+
+@registry.register_measure
+class DeepMimicEgocentricLinearVelocityReward(VirtualMeasure):
+    """The measure calculates the error between current and target end_effector_positions (feet locations), specifically for the natural gait. Based on Deep Mimic"""
+
+    cls_uuid: str = "DEEP_MIMIC_EGOCENTRIC_LINEAR_VELOCITY"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        target_lin_vel = self._sim.robot.natural_gait_egocentric_linear_velocity(self._sim.elapsed_steps)
+        current_lin_vel = self._sim.robot.egocentric_linear_velocity()
+
+        difference = current_lin_vel - target_lin_vel
+
+        self._metric = np.exp(-10 * np.sum(np.square(difference)))
+        
+        print(self.cls_uuid, self._metric)
+
+@registry.register_measure
 class VectorAlignmentValue(VirtualMeasure):
     """The measure takes the dot product of the a vector in the ant's local space and a global vector."""
     cls_uuid: str = "VECTOR_ALIGNMENT_VALUE"
