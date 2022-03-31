@@ -86,6 +86,7 @@ def ant_environment_example():
             
             #print(str(steps % 30) + ": " + str(env._sim.robot.end_effector_positions()) + ",")
             #print(str(steps % 30) + ": " + str(env._sim.robot.joint_velocities) + ",")
+            #print(str(steps % 30) + ": " + str(list(env._sim.robot.leg_joint_state)) + ",") # Get the actual current position
             #print(str(steps % 30) + ": " + str(list(joint_target)) + ",")
             
             # print(env._sim.robot.end_effector_positions() - env._sim.robot.natural_gait_end_effector_position(steps))

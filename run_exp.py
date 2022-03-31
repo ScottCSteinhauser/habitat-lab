@@ -46,7 +46,7 @@ experiments: Dict[str, Dict[str,str]] = {
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
             "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
-            "TASK.MEASUREMENTS": "[X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
+            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
             "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
             "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
             "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
@@ -516,9 +516,104 @@ experiment_variations: Dict[str, Dict[str,str]] = {
         "overrides": {
             "RL.POLICY.ACTION_DIST.max_std": "0.04",
             "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
+            "RL.PPO.num_steps": "600"
             },
     },
+    
+    # Testing Deep Mimic reward formulation
+    # Just pose mimic
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v1":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    # Include target direction
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v3":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v4":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    # With Vision
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v5":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "SENSORS": "['HEAD_RGB_SENSOR']",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v6":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "True",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "SENSORS": "['HEAD_RGB_SENSOR']",
+                "RL.PPO.num_steps": "600", 
+            },
+    },
+    
 }
 
 #merge variations into experiments

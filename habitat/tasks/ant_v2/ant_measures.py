@@ -134,6 +134,30 @@ class VelocityAlignment(VirtualMeasure):
         # print("vel alignment:", self._metric)
 
 @registry.register_measure
+class DeepMimicTargetHeading(VirtualMeasure):
+    """Measures the agent's root velocity alignment along a target vector."""
+
+    cls_uuid: str = "DEEP_MIMIC_TARGET_HEADING"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #NOTE: should be normalized, start with X axis
+        super().__init__(sim, config, args)
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        target_direction = self._sim.target_vector # normalized
+        target_speed = self._sim.target_speed
+        if self._metric is None or self._sim.prev_robot_transformation is None:
+            self._metric = None
+        ant_velocity = self._sim.robot.base_velocity
+
+        self._metric = np.exp(-1 * (max(0, target_speed - np.dot(ant_velocity, target_direction))**2) )
+        #print(self.cls_uuid, self._metric)
+
+@registry.register_measure
 class OrthogonalVelocity(VirtualMeasure):
     """Measures the agent's root velocity alignment orthogonal a target vector."""
 
@@ -258,7 +282,7 @@ class JointStateProductError(VirtualMeasure):
 class DeepMimicPoseReward(VirtualMeasure):
     """The measure calculates the error between current and target joint states, specifically a pose. Based on Deep Mimic"""
 
-    cls_uuid: str = "POSE_REWARD"
+    cls_uuid: str = "DEEP_MIMIC_POSE_REWARD"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
@@ -268,18 +292,18 @@ class DeepMimicPoseReward(VirtualMeasure):
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
-        self.target_state = self._sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
+        self.target_joint_position = self._sim.leg_target_state # np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
  
         if self._metric is None:
             self._metric = None
 
-        current_state = self._sim.robot.leg_joint_pos
+        current_joint_state = self._sim.robot.leg_joint_state
 
-        difference = current_state - self.target_state
+        difference = current_joint_state - self.target_joint_position
 
         self._metric = np.exp(-2 * np.sum(np.square(difference)))
         
-        #print(self.cls_uuid, self._metric)
+        # print(self.cls_uuid, self._metric)
         
 @registry.register_measure
 class DeepMimicJointVelocityReward(VirtualMeasure):
@@ -302,7 +326,7 @@ class DeepMimicJointVelocityReward(VirtualMeasure):
 
         self._metric = np.exp(-0.1 * np.sum(np.square(difference)))
         
-        #print(self.cls_uuid, self._metric)
+        # print(self.cls_uuid, self._metric)
 
 @registry.register_measure
 class DeepMimicEndEffectorPositionReward(VirtualMeasure):
@@ -323,9 +347,9 @@ class DeepMimicEndEffectorPositionReward(VirtualMeasure):
 
         difference = current_end_effector_positions - target_end_effector_positions
 
-        self._metric = np.exp(-40 * np.sum(np.square(difference)))
+        self._metric = np.exp(-10 * np.sum(np.square(difference)))
         
-        #print(self.cls_uuid, self._metric)
+        # print(self.cls_uuid, self._metric)
 
 @registry.register_measure
 class DeepMimicEgocentricLinearVelocityReward(VirtualMeasure):
@@ -343,12 +367,12 @@ class DeepMimicEgocentricLinearVelocityReward(VirtualMeasure):
     ):
         target_lin_vel = self._sim.robot.natural_gait_egocentric_linear_velocity(self._sim.elapsed_steps)
         current_lin_vel = self._sim.robot.egocentric_linear_velocity()
-
+        # print(current_lin_vel)
         difference = current_lin_vel - target_lin_vel
 
         self._metric = np.exp(-10 * np.sum(np.square(difference)))
         
-        print(self.cls_uuid, self._metric)
+        #print(self.cls_uuid, self._metric)
 
 @registry.register_measure
 class VectorAlignmentValue(VirtualMeasure):
@@ -555,6 +579,60 @@ class OrientationTerminate(VirtualMeasure):
             self._metric = False
 
 @registry.register_measure
+class DeepMimicPoseCompositeAntReward(VirtualMeasure):
+    """The measure calculates the error between current and target joint states"""
+
+    cls_uuid: str = "DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        #assert that the reward term is properly configured
+        assert config.COMPONENTS
+        assert config.WEIGHTS
+        assert len(config.COMPONENTS) == len(config.WEIGHTS)
+
+        #add all potential dependencies from config here:
+        self.measure_dependencies=config.COMPONENTS
+
+        #NOTE: define active rewards and weights from config here:
+        self.active_measure_weights = {}
+        for i,measure_uuid in enumerate(self.measure_dependencies):
+            self.active_measure_weights[measure_uuid] = float(config.WEIGHTS[i])
+
+        #now add additional dependencies
+        self.measure_dependencies.extend(config.ADDITIONAL_REQUIREMENTS)
+        
+        super().__init__(sim, config, args)
+
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        task.measurements.check_measure_dependencies(
+            self.uuid,
+            self.measure_dependencies,
+        )
+
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs
+        )
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        reward = 0
+        #weight and combine reward terms
+        for measure_uuid,weight in self.active_measure_weights.items():
+            measure = task.measurements.measures[measure_uuid]
+            if measure.get_metric():
+                reward += measure.get_metric()*weight
+
+        self._metric = reward
+        #print(self.cls_uuid, self._metric)
+
+@registry.register_measure
 class CompositeAntReward(VirtualMeasure):
     """The measure calculates the error between current and target joint states"""
 
@@ -616,3 +694,4 @@ class CompositeAntReward(VirtualMeasure):
             if orientation_terminate:
                 reward -= 1000
         self._metric = reward
+        #print(self.cls_uuid, self._metric)
