@@ -116,7 +116,8 @@ class AntV2Sim(HabitatSim):
             self.leg_target_state_offset = -1
         else:
             self.leg_target_state_offset_type = "CONSTANT"
-            self.leg_target_state_offset = config.LEG_TARGET_STATE_OFFSET
+            if config.LEG_TARGET_STATE_OFFSET != "NONE":
+                self.leg_target_state_offset = config.LEG_TARGET_STATE_OFFSET
             
             
         
@@ -206,6 +207,8 @@ class AntV2Sim(HabitatSim):
         
         if self.leg_target_state_offset_type == "RANDOM":
             self.leg_target_state_offset = random.randint(0, self.ctrl_freq)
+        elif self.leg_target_state_offset_type == "NONE":
+            self.leg_target_state_offset = 0
         
         if self.robot is None: # Load the environment
             # # get the primitive assets attributes manager

@@ -614,6 +614,211 @@ experiment_variations: Dict[str, Dict[str,str]] = {
             },
     },
     
+    
+    # Round two of deep mimic experiments
+    
+    # Adding initialization into target pose, random pose frame offset, using deep mimic ppo values
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.1":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+            },
+    },
+    
+    # Using different gamma and clip
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.2":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # Add target heading goal
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.3":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+            },
+    },
+    
+    # Using different gamma and clip
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.4":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # Using deep mimic's exact exponential constants
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.5":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.DEEP_MIMIC_POSE_REWARD.CONSTANT": "-2.0",
+            "TASK.DEEP_MIMIC_JOINT_VELOCITY_REWARD.CONSTANT": "-0.1",
+            "TASK.DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD.CONSTANT": "-40.0",
+            "TASK.DEEP_MIMIC_TARGET_HEADING.CONSTANT": "-2.5",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # Add early terminate for base hitting the ground
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.6":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,BASE_CONTACT_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[BASE_CONTACT_TERMINATE]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300", 
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # Use a higher std to give it a chance to learn to stand up
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.7":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,BASE_CONTACT_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[BASE_CONTACT_TERMINATE]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.1",
+                "RL.PPO.num_steps": "300", 
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # Try training using original joint error formulation, with target heading in addition
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.8":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "300",
+                "RL.PPO.gamma": "0.95",
+                "RL.PPO.clip_param": "0.2",
+            },
+    },
+    
+    # use original ppo config values (but with gamma lower)
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.9":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600",
+                "RL.PPO.gamma": "0.95",
+            },
+    },
+    
+    # same as above, greater target heading weighting
+    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.10":{
+        "base_experiment": "ant_train_gait_abscontroller_base",
+        "task_overrides":{
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,2.0]",
+            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
+            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
+            },
+        "overrides": {
+                "RL.POLICY.ACTION_DIST.max_std": "0.04",
+                "RL.PPO.num_steps": "600",
+                "RL.PPO.gamma": "0.95",
+            },
+    },
+    
 }
 
 #merge variations into experiments

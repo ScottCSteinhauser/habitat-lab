@@ -311,7 +311,7 @@ class DeepMimicPoseReward(VirtualMeasure):
 
         self._metric = np.exp(self.constant * np.sum(np.square(difference)))
         
-        print(self.cls_uuid, self._metric)
+        #print(self.cls_uuid, self._metric)
         
 @registry.register_measure
 class DeepMimicJointVelocityReward(VirtualMeasure):
@@ -598,6 +598,33 @@ class OrientationTerminate(VirtualMeasure):
             self._metric = True
         else:
             self._metric = False
+
+@registry.register_measure
+class BaseContactTerminate(VirtualMeasure):
+    cls_uuid: str = "BASE_CONTACT_TERMINATE"
+
+    def __init__(self, *args, sim, config, task, **kwargs):
+        self._sim = sim
+        self._config = config
+        super().__init__(*args, sim=sim, config=config, task=task, **kwargs)
+
+    def reset_metric(self, *args, episode, task, observations, **kwargs):
+        self.update_metric(
+            *args,
+            episode=episode,
+            task=task,
+            observations=observations,
+            **kwargs
+        )
+
+    def update_metric(self, *args, episode, task, observations, **kwargs):
+        contact_points = self._sim.get_physics_contact_points()
+        base_is_touching = False
+        for contact in contact_points:
+            if contact.link_id_a == -1:
+                base_is_touching = True
+                task.should_end = True
+        self._metric = base_is_touching
 
 @registry.register_measure
 class DeepMimicPoseCompositeAntReward(VirtualMeasure):
