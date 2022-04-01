@@ -91,6 +91,9 @@ class AntV2Sim(HabitatSim):
         self.leg_target_state = None
         self.next_leg_target_state = None # Relevant when using the gait deviation controller, represents the gait joint positions for the next timestep
         self.leg_target_state_type = None
+        
+        self.leg_target_state_offset_type = None
+        self.leg_target_state_offset = 0
                 
         
         if config.LEG_TARGET_STATE == "RANDOM":
@@ -104,6 +107,18 @@ class AntV2Sim(HabitatSim):
             self.leg_target_state_type = "CONSTANT"
         self.leg_target_state = np.array([float(x) for x in self.leg_target_state])
         self.next_leg_target_state = self.leg_target_state
+        
+        # Do we initialize the ant in the leg target state?
+        self.initialize_in_target_state = config.INITIALIZE_IN_TARGET_STATE
+        
+        if config.LEG_TARGET_STATE_OFFSET == "RANDOM":
+            self.leg_target_state_offset_type = "RANDOM"
+            self.leg_target_state_offset = -1
+        else:
+            self.leg_target_state_offset_type = "CONSTANT"
+            self.leg_target_state_offset = config.LEG_TARGET_STATE_OFFSET
+            
+            
         
         # The direction we want the ant to progress in. The magnitude is also the desired velocity
         self.target_vector = None
@@ -188,6 +203,9 @@ class AntV2Sim(HabitatSim):
 
         self.joint_position_history = []
         self.action_history = []          
+        
+        if self.leg_target_state_offset_type == "RANDOM":
+            self.leg_target_state_offset = random.randint(0, self.ctrl_freq)
         
         if self.robot is None: # Load the environment
             # # get the primitive assets attributes manager
@@ -279,8 +297,7 @@ class AntV2Sim(HabitatSim):
             if config.LEG_TARGET_STATE == "RANDOM":
                 self.leg_target_state = np.random.rand(8) * 2 - 1
             elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
-                self.leg_target_state = np.zeros(8)
-            
+                self.leg_target_state = self.robot.natural_walking_gait_at(self.leg_target_state_offset, self.ctrl_freq, 0.23, -0.26, 0.775)
             if config.TARGET_VECTOR == "RANDOM":
                 self.generate_random_target_vector()
                 
@@ -297,13 +314,17 @@ class AntV2Sim(HabitatSim):
             self.ghost_robot.base_transformation = mn.Matrix4.translation(mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)) @ self.robot.base_transformation
             #self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.AGENT_0.START_POSITION) + self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)   
         
+        if self.initialize_in_target_state:
+            self.robot.leg_joint_state = np.clip(self.leg_target_state, self.robot.joint_limits[0], self.robot.joint_limits[1])
+            
 
     def step(self, action):
+        frame = self.elapsed_steps + self.leg_target_state_offset
         # update joint target
         if self.leg_target_state_type == "NATURAL_GAIT":
-            self.leg_target_state = self.robot.natural_walking_gait_at(self.elapsed_steps, self.ctrl_freq, 0.23, -0.26, 0.775)
+            self.leg_target_state = self.robot.natural_walking_gait_at(frame, self.ctrl_freq, 0.23, -0.26, 0.775)
 
-            self.next_leg_target_state = self.robot.natural_walking_gait_at(self.elapsed_steps + 1, self.ctrl_freq, 0.23, -0.26, 0.775)
+            self.next_leg_target_state = self.robot.natural_walking_gait_at(frame + 1, self.ctrl_freq, 0.23, -0.26, 0.775)
         
         # add robot joint position to history
         self.joint_position_history.append(self.robot.leg_joint_state)
@@ -620,7 +641,7 @@ class LegRelPosActionGaitDeviation(SimulatorTaskAction):
         self._sim: AntV2Sim
         
         #clip the motor targets to the joint range
-        frame = self._sim.elapsed_steps
+        frame = self._sim.elapsed_steps + self._sim.leg_target_state_offset
         ctrl_freq = self._sim.ctrl_freq
         natural_ant_gait = self._sim.robot.natural_walking_gait_at(frame, ctrl_freq, 0.23, -0.26, 0.775)
         

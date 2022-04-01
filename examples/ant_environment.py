@@ -76,11 +76,12 @@ def ant_environment_example():
             #action['action_args']['leg_action'] = np.ones(8)*-1
             #action['action_args']['leg_action'] = np.zeros(8)
             
-            #joint_target = np.ones(8)*0.5
+            #joint_target = np.zeros(8)
             #joint_target = np.array([0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0])
             #joint_target = env._sim.robot.random_pose()
             #joint_target = env._sim.robot.leg_joint_state + 0.2*env._sim.robot.random_pose()
-            joint_target = env._sim.robot.natural_walking_gait_at(steps, 30, 0.23, -0.26, 0.775)
+
+            joint_target = env._sim.robot.natural_walking_gait_at(steps + env._sim.leg_target_state_offset, 30, 0.23, -0.26, 0.775)
             
             #print("{:.3f}".format(env._sim.get_world_time() - 1) + ": " + str(env._sim.robot.end_effector_positions()) + ",")
             

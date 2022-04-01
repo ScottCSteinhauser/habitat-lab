@@ -144,6 +144,10 @@ class DeepMimicTargetHeading(VirtualMeasure):
     ):
         #NOTE: should be normalized, start with X axis
         super().__init__(sim, config, args)
+        self.config = config
+        self.constant = -1.0
+        if self.config.CONSTANT:
+            self.constant = self.config.CONSTANT
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
@@ -154,7 +158,7 @@ class DeepMimicTargetHeading(VirtualMeasure):
             self._metric = None
         ant_velocity = self._sim.robot.base_velocity
 
-        self._metric = np.exp(-1 * (max(0, target_speed - np.dot(ant_velocity, target_direction))**2) )
+        self._metric = np.exp(self.constant * (max(0, target_speed - np.dot(ant_velocity, target_direction))**2) )
         #print(self.cls_uuid, self._metric)
 
 @registry.register_measure
@@ -288,6 +292,10 @@ class DeepMimicPoseReward(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         super().__init__(sim, config, args)
+        self.config = config
+        self.constant = -2.0
+        if self.config.CONSTANT:
+            self.constant = self.config.CONSTANT
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
@@ -301,9 +309,9 @@ class DeepMimicPoseReward(VirtualMeasure):
 
         difference = current_joint_state - self.target_joint_position
 
-        self._metric = np.exp(-2 * np.sum(np.square(difference)))
+        self._metric = np.exp(self.constant * np.sum(np.square(difference)))
         
-        # print(self.cls_uuid, self._metric)
+        print(self.cls_uuid, self._metric)
         
 @registry.register_measure
 class DeepMimicJointVelocityReward(VirtualMeasure):
@@ -315,18 +323,23 @@ class DeepMimicJointVelocityReward(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         super().__init__(sim, config, args)
+        self.config = config
+        self.constant = -0.05
+        if self.config.CONSTANT:
+            self.constant = self.config.CONSTANT
+        
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
-        target_velocities = self._sim.robot.natural_gait_joint_velocities(self._sim.elapsed_steps)
+        target_velocities = self._sim.robot.natural_gait_joint_velocities(self._sim.elapsed_steps + self._sim.leg_target_state_offset)
         current_velocities = self._sim.robot.joint_velocities
 
         difference = current_velocities - target_velocities
 
-        self._metric = np.exp(-0.1 * np.sum(np.square(difference)))
+        self._metric = np.exp(self.constant * np.sum(np.square(difference)))
         
-        # print(self.cls_uuid, self._metric)
+        #print(self.cls_uuid, self._metric)
 
 @registry.register_measure
 class DeepMimicEndEffectorPositionReward(VirtualMeasure):
@@ -338,18 +351,22 @@ class DeepMimicEndEffectorPositionReward(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         super().__init__(sim, config, args)
+        self.config = config
+        self.constant = -10.0
+        if self.config.CONSTANT:
+            self.constant = self.config.CONSTANT
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
-        target_end_effector_positions = self._sim.robot.natural_gait_end_effector_position(self._sim.elapsed_steps)
+        target_end_effector_positions = self._sim.robot.natural_gait_end_effector_position(self._sim.elapsed_steps + self._sim.leg_target_state_offset)
         current_end_effector_positions = self._sim.robot.end_effector_positions()
 
         difference = current_end_effector_positions - target_end_effector_positions
 
-        self._metric = np.exp(-10 * np.sum(np.square(difference)))
+        self._metric = np.exp(self.constant * np.sum(np.square(difference)))
         
-        # print(self.cls_uuid, self._metric)
+        #print(self.cls_uuid, self._metric)
 
 @registry.register_measure
 class DeepMimicEgocentricLinearVelocityReward(VirtualMeasure):
@@ -361,16 +378,20 @@ class DeepMimicEgocentricLinearVelocityReward(VirtualMeasure):
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
     ):
         super().__init__(sim, config, args)
+        self.config = config
+        self.constant = -10.0
+        if self.config.CONSTANT:
+            self.constant = self.config.CONSTANT
 
     def update_metric(
         self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
     ):
-        target_lin_vel = self._sim.robot.natural_gait_egocentric_linear_velocity(self._sim.elapsed_steps)
+        target_lin_vel = self._sim.robot.natural_gait_egocentric_linear_velocity(self._sim.elapsed_steps + self._sim.leg_target_state_offset)
         current_lin_vel = self._sim.robot.egocentric_linear_velocity()
         # print(current_lin_vel)
         difference = current_lin_vel - target_lin_vel
 
-        self._metric = np.exp(-10 * np.sum(np.square(difference)))
+        self._metric = np.exp(self.constant * np.sum(np.square(difference)))
         
         #print(self.cls_uuid, self._metric)
 
