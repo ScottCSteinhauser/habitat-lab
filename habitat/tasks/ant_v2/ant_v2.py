@@ -289,7 +289,6 @@ class AntV2Sim(HabitatSim):
                     obstacles[-1].translation = np.array([i*3 + 2, 0.5, 1.2 * (1 - 2 * (i % 2))])
                     obstacles[-1].motion_type = habitat_sim.physics.MotionType.STATIC
                     
-                    
         else: # environment is already loaded; reset the Ant
             self.robot.reset()
             self.robot.base_pos = mn.Vector3(
@@ -297,14 +296,14 @@ class AntV2Sim(HabitatSim):
             )
             self.robot.base_rot = self.ant_rotation
             
-            if config.LEG_TARGET_STATE == "RANDOM":
-                self.leg_target_state = np.random.rand(8) * 2 - 1
-            elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
-                self.leg_target_state = self.robot.natural_walking_gait_at(self.leg_target_state_offset, self.ctrl_freq, 0.23, -0.26, 0.775)
-            if config.TARGET_VECTOR == "RANDOM":
-                self.generate_random_target_vector()
-                
-            self.prev_robot_transformation = self.robot.base_transformation
+        if config.LEG_TARGET_STATE == "RANDOM":
+            self.leg_target_state = np.random.rand(8) * 2 - 1
+        elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
+            self.leg_target_state = self.robot.natural_walking_gait_at(self.leg_target_state_offset, self.ctrl_freq, 0.23, -0.26, 0.775)
+        if config.TARGET_VECTOR == "RANDOM":
+            self.generate_random_target_vector()
+            
+        self.prev_robot_transformation = self.robot.base_transformation
         self.elapsed_steps = 0
         
         # if in eval mode, create an ghost ant. Otherwise, remove it if it exists.
@@ -318,7 +317,8 @@ class AntV2Sim(HabitatSim):
             #self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.AGENT_0.START_POSITION) + self.ghost_robot.base_pos = mn.Vector3(self.habitat_config.GHOST_ROBOT_OFFSET)   
         
         if self.initialize_in_target_state:
-            self.robot.leg_joint_state = np.clip(self.leg_target_state, self.robot.joint_limits[0], self.robot.joint_limits[1])
+            self.robot.leg_joint_pos = np.clip(self.leg_target_state, self.robot.joint_limits[0], self.robot.joint_limits[1]) # sets the target position for the PD controllers
+            self.robot.leg_joint_state = np.clip(self.leg_target_state, self.robot.joint_limits[0], self.robot.joint_limits[1]) # sets the exact state
             
 
     def step(self, action):

@@ -29,7 +29,7 @@ SIMULATOR:
         NORMALIZE_DEPTH: True
   ROBOT_URDF: data/robots/ant.urdf
   
-  SHOW_GHOST_ROBOT: True
+  SHOW_GHOST_ROBOT: False
   GHOST_ROBOT_URDF: data/robots/ant_blue.urdf # optional; used for visualizing how close the robot tracks some target gait/pose
   GHOST_ROBOT_OFFSET: [0.0, 0.0, 1.5]
 
@@ -37,9 +37,9 @@ SIMULATOR:
   CTRL_FREQ: 30
 
   # LEG TARGET
-  LEG_TARGET_STATE: "NATURAL_GAIT" # [0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0] # 
+  LEG_TARGET_STATE: "NATURAL_GAIT" # [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # 
   INITIALIZE_IN_TARGET_STATE: True
-  LEG_TARGET_STATE_OFFSET: "NONE" # Specifies an offset for the pose in terms of frames
+  LEG_TARGET_STATE_OFFSET: 25 # Specifies an offset for the pose in terms of frames
 
   #Target vector for the ant to progress towards, vector must be normalized
   TARGET_VECTOR: [1.0, 0.0, 0.0] # "RANDOM" #
@@ -50,7 +50,7 @@ SIMULATOR:
   #AC_FREQ_RATIO: 4
 
   LOAD_OBSTACLES: False # Loads obstacles for the ant to avoid
-  LOAD_CORRIDOR: True # Loads obstacles for the ant to avoid
+  LOAD_CORRIDOR: False # Loads obstacles for the ant to avoid
 
   HABITAT_SIM_V0:
     ALLOW_SLIDING: True
@@ -213,7 +213,7 @@ TASK:
       LEG_JOINT_DIMENSIONALITY: 8
       DELTA_POS_LIMIT: 0.3
   POSSIBLE_ACTIONS:
-    - LEG_ACTION_ABS
+    - LEG_ACTION
 
 DATASET:
   TYPE: AntV2Dataset-v0
