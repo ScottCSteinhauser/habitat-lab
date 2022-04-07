@@ -95,16 +95,15 @@ class AntV2Sim(HabitatSim):
         self.leg_target_state_offset_type = None
         self.leg_target_state_offset = 0
                 
-        
-        if config.LEG_TARGET_STATE == "RANDOM":
+        self.leg_target_state_type = config.LEG_TARGET_STATE_MODE
+        if self.leg_target_state_type == "RANDOM":
             self.leg_target_state = np.random.rand(8) * 2 - 1
-            self.leg_target_state_type = "RANDOM"
-        elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
+        elif self.leg_target_state_type == "NATURAL_GAIT":
             self.leg_target_state = np.zeros(8) # will be updated every timestep to match the ant's natural gait
-            self.leg_target_state_type = "NATURAL_GAIT"
-        else:
+        elif self.leg_target_state_type == "CONSTANT":
             self.leg_target_state = np.array(config.LEG_TARGET_STATE)
-            self.leg_target_state_type = "CONSTANT"
+        else:
+            assert False, f"invalid LEG_TARGET_STATE_MODE == {config.LEG_TARGET_STATE_MODE}"
         self.leg_target_state = np.array([float(x) for x in self.leg_target_state])
         self.next_leg_target_state = self.leg_target_state
         
@@ -296,9 +295,9 @@ class AntV2Sim(HabitatSim):
             )
             self.robot.base_rot = self.ant_rotation
             
-        if config.LEG_TARGET_STATE == "RANDOM":
+        if config.LEG_TARGET_STATE_MODE == "RANDOM":
             self.leg_target_state = np.random.rand(8) * 2 - 1
-        elif config.LEG_TARGET_STATE == "NATURAL_GAIT":
+        elif config.LEG_TARGET_STATE_MODE == "NATURAL_GAIT":
             self.leg_target_state = self.robot.natural_walking_gait_at(self.leg_target_state_offset, self.ctrl_freq, 0.23, -0.26, 0.775)
         if config.TARGET_VECTOR == "RANDOM":
             self.generate_random_target_vector()

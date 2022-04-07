@@ -98,11 +98,19 @@ def construct_envs(
 
         proc_config.freeze()
         configs.append(proc_config)
-
-    envs = habitat.VectorEnv( # Getting EOFError with VectorEnv, using ThreadedVectorEnv instead
-        make_env_fn=make_env_fn,
-        env_fn_args=tuple(zip(configs, env_classes)),
-        workers_ignore_signals=workers_ignore_signals,
-    )
+    envs = None
+    if config.USE_THREADED_VECTOR_ENV:
+        print("!!! Using ThreadedVectorEnv. Good for Debugging, much less efficient for training. See config.USE_THREADED_VECTOR_ENV setting. !!!")
+        envs = habitat.ThreadedVectorEnv( # Getting EOFError with VectorEnv, using ThreadedVectorEnv instead
+            make_env_fn=make_env_fn,
+            env_fn_args=tuple(zip(configs, env_classes)),
+            workers_ignore_signals=workers_ignore_signals,
+        )
+    else:
+        envs = habitat.VectorEnv( # Getting EOFError with VectorEnv, using ThreadedVectorEnv instead
+            make_env_fn=make_env_fn,
+            env_fn_args=tuple(zip(configs, env_classes)),
+            workers_ignore_signals=workers_ignore_signals,
+        )
     
     return envs

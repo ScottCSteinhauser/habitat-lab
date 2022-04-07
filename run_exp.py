@@ -12,8 +12,14 @@ from typing import Dict
 # List experiments for quick multi-launch from commandline.
 #NOTE: See the examples/template below for formatting
 experiments: Dict[str, Dict[str,str]] = {
-    "ant_constant_position_base":{
-        "description": "Try teaching the ant to acheive a constant joint configuration.",
+    # "template":{
+    #     "description": "",
+    #     "config": "", #optional
+    #     "task_overrides": {}, #overrides to the task config
+    #     "overrides": {}, #overrides to the learning config
+    # }
+    "ant_joint_state_regression_base":{
+        "description": "Try teaching the ant to achieve a constant joint configuration.",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
             "SIMULATOR.LEG_TARGET_STATE": "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]",
@@ -48,6 +54,7 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.PPO.clip_param": "0.1",
             "RL.PPO.lr": "3e-4",
+            "RL.POLICY.ACTION_DIST.max_std": "0.1", #in case default changes in future
         },
     },
 
@@ -56,7 +63,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
+            "SIMULATOR.LEG_TARGET_STATE_MODE": "\"NATURAL_GAIT\"",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
             "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
@@ -99,7 +106,7 @@ experiments: Dict[str, Dict[str,str]] = {
         "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
+            "SIMULATOR.LEG_TARGET_STATE_MODE": "\"NATURAL_GAIT\"",
             "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
             "SIMULATOR.LOAD_CORRIDOR": "True",
             "SIMULATOR.LOAD_OBSTACLES": "False",
@@ -124,8 +131,70 @@ experiments: Dict[str, Dict[str,str]] = {
 }
 
 #variations of base experiments:
+#NOTE: See the examples/template below for formatting
 experiment_variations: Dict[str, Dict[str,str]] = {
-    
+    # "template_exp_key":{
+    #     "base_experiment": "base_experiment_key",
+    #     "task_overrides": {}, #overrides to the task config (duplicate entries override base["task_overrides"]["key"])
+    #     "overrides": {}, #overrides to the learning config (duplicate entries override base["overrides"]["key"])
+    # }
+    "ant_joint_state_regression_new_target":{
+        "base_experiment":"ant_joint_state_regression_base",
+        "task_overrides": {"SIMULATOR.LEG_TARGET_STATE": "[0.0,-1.0,0.0,-1.0,0.0,1.0,0.0,1.0]"}, #rest standing pose
+         "overrides":{}
+    },
+    "ant_move_forward_rel_pos_simple":{
+        #reduce to X_LOCATION only
+        "base_experiment":"ant_move_forward_rel_pos_base",
+        "task_overrides": {
+            "TASK.MEASUREMENTS": "[X_LOCATION]",
+        },
+        "overrides":{
+            "RL.SUCCESS_MEASURE": "X_LOCATION",
+            "RL.REWARD_MEASURE": "X_LOCATION",
+        }
+    },
+    "ant_move_forward_rel_pos_simple_low_std":{
+        #reduce to X_LOCATION only
+        "base_experiment":"ant_move_forward_rel_pos_base",
+        "task_overrides": {
+            "TASK.MEASUREMENTS": "[X_LOCATION]",
+        },
+        "overrides":{
+            "RL.SUCCESS_MEASURE": "X_LOCATION",
+            "RL.REWARD_MEASURE": "X_LOCATION",
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+        }
+    },
+    "ant_move_forward_abs_pos_simple":{
+        #reduce to X_LOCATION only
+        "base_experiment":"ant_move_forward_rel_pos_base",
+        "task_overrides": {
+            #abs position control
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]", #note: max_std still 0.1
+            "TASK.MEASUREMENTS": "[X_LOCATION]",
+        },
+        "overrides":{
+            "RL.SUCCESS_MEASURE": "X_LOCATION",
+            "RL.REWARD_MEASURE": "X_LOCATION",
+        }
+    },
+    "ant_move_forward_abs_pos_simple_low_std":{
+        #reduce to X_LOCATION only
+        "base_experiment":"ant_move_forward_rel_pos_base",
+        "task_overrides": {
+            #abs position control
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]", #note: max_std still 0.1
+            "TASK.MEASUREMENTS": "[X_LOCATION]",
+        },
+        "overrides":{
+            "RL.SUCCESS_MEASURE": "X_LOCATION",
+            "RL.REWARD_MEASURE": "X_LOCATION",
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+        }
+    },
+
+
 }
 
 #merge variations into experiments
@@ -201,6 +270,7 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False):
     if testing:
         overrides += " NUM_ENVIRONMENTS 1"
         overrides += " RL.PPO.num_mini_batch 1"
+        overrides += " USE_THREADED_VECTOR_ENV True"
 
     #add the overrides
     full_command += overrides
@@ -238,6 +308,8 @@ if __name__ == "__main__":
         print("------------------------------------------------------------")
         run_cmd_prefix = "python run_exp.py --exp "
         run_cmd_postfix = " --type " + args.type 
+        if args.test:
+            run_cmd_postfix+=" --test"
         for exp_name in experiments.keys():
             print(run_cmd_prefix + exp_name + run_cmd_postfix)
         print("============================================================")

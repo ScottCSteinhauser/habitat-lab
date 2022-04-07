@@ -33,6 +33,8 @@ _C.TEST_EPISODE_COUNT = -1
 _C.EVAL_CKPT_PATH_DIR = "data/checkpoints"  # path to ckpt or path to ckpts dir
 _C.NUM_ENVIRONMENTS = 16
 _C.NUM_PROCESSES = -1  # depricated
+# use ThreadedVectorEnv for debugging EOF errors w/ worker processes failures:
+_C.USE_THREADED_VECTOR_ENV = False
 _C.SENSORS = ["RGB_SENSOR", "DEPTH_SENSOR"]
 _C.CHECKPOINT_FOLDER = "data/checkpoints"
 _C.NUM_UPDATES = 10000
