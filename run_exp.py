@@ -12,54 +12,8 @@ from typing import Dict
 # List experiments for quick multi-launch from commandline.
 #NOTE: See the examples/template below for formatting
 experiments: Dict[str, Dict[str,str]] = {
-    # "template":{
-    #     "description": "",
-    #     "config": "", #optional
-    #     "task_overrides": {}, #overrides to the task config
-    #     "overrides": {}, #overrides to the learning config
-    # }
-    "ant_train_gait_orientation_template":{
-        "description": "Try teaching the ant to walk with a natural gait and turn to the right.",
-        "task_overrides": {
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10",
-            "TASK.ACTION_SMOOTHNESS.WINDOW": "10",
-            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0,1.0]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]"
-        },
-        "overrides": {
-            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.PPO.clip_param": "0.1",
-            "RL.POLICY.ACTION_DIST.max_std": "0.1"
-        }
-    },
-    "ant_train_gait_abscontroller_base":{
-        "description": "Try teaching the ant to walk with a natural gait and absolute position actions.",
-        "task_overrides": {
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
-            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
-            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
-        },
-        "overrides": {
-            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.PPO.clip_param": "0.1",
-            "RL.POLICY.ACTION_DIST.max_std": "0.1",
-        }
-    },
-    "ant_flat_position_base":{
-        "description": "Try teaching the ant to flatten itself.",
+    "ant_constant_position_base":{
+        "description": "Try teaching the ant to acheive a constant joint configuration.",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
             "SIMULATOR.LEG_TARGET_STATE": "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]",
@@ -76,748 +30,101 @@ experiments: Dict[str, Dict[str,str]] = {
             "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.PPO.clip_param": "0.1",
             "RL.POLICY.ACTION_DIST.max_std": "0.1",
-        }
+        },
     },
-    "ant_delta_x_base":{
-        "description": "Try teaching the ant to walk forward with no guidance.",
+        
+    "ant_move_forward_rel_pos_base":{
+        "description": "Reward cumulative progress in X direction.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
-            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
-            "SIMULATOR.TARGET_VECTOR": "[1.0,0.0,0.0]",
-            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,5.0,1.0]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",        
-            },
+            "SIMULATOR.LEG_TARGET_STATE": "[1.0,0.0,-1.0,0.0,1.0,0.0,-1.0,0.0]",
+            "TASK.MEASUREMENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+        },
         "overrides": {
             "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.PPO.clip_param": "0.1",
-            "RL.POLICY.ACTION_DIST.max_std": "0.1",
-        }
+            "RL.PPO.lr": "3e-4",
+        },
     },
-    "ant_delta_x_abs_base":{
-        "description": "Try teaching the ant to walk forward with no guidance.",
+
+    "ant_train_gait_abscontroller_base":{
+        "description": "Try teaching the ant to walk with a natural gait and absolute position actions.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
         "task_overrides": {
             "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
             "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
             "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
-            "SIMULATOR.TARGET_VECTOR": "[1.0,0.0,0.0]",
-            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,X_LOCATION,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[VECTOR_ROOT_DELTA,X_LOCATION,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[100.0,1.0,1.0]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",        
-            },
-        "overrides": {
-            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
-            "RL.PPO.clip_param": "0.1",
-            "RL.POLICY.ACTION_DIST.max_std": "0.1",
-        }
-    },
-    
-    "ant_delta_x_rel_base":{
-        "description": "Try teaching the ant to walk forward with no guidance, using relative position controller.",
-        "task_overrides": {
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
-            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
-            "SIMULATOR.TARGET_VECTOR": "[1.0,0.0,0.0]",
-            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,VECTOR_ROOT_DELTA,X_LOCATION,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[2.0,1.0]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",        
-            },
+            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
+        },
         "overrides": {
             "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
             "RL.PPO.clip_param": "0.1",
             "RL.POLICY.ACTION_DIST.max_std": "0.04",
-        }
+        },
     },
-
+    
+    "ant_train_orientation_with_gait_deviation_base":{
+        "description": "Try teaching the ant to orient with a constant vector using the gait deviation action controller.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_GAIT_DEVIATION]",
+            "TASK.ACTIONS.LEG_ACTION_GAIT_DEVIATION.DELTA_POS_LIMIT": "0.5", 
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10",
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10",
+            "TASK.MEASUREMENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,ACTION_COST_SUM,ACTION_SMOOTHNESS,COMPOSITE_ANT_REWARD]",
+            "SIMULATOR.TARGET_VECTOR": "[0.0,0.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE_SQUARED,ACTION_COST_SUM,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,2.0,4.0,2.0,1.0]",
+        },   
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.PPO.clip_param": "0.1",
+        },
+    },
+    
+    "ant_train_gait_abscontroller_corridor_vision_base":{ 
+        "description": "Try teaching the ant to walk with a natural gait and absolute position actions, maintaining a forward orientation.",
+        "config": "habitat_baselines/config/ant_v2/ppo_ant_v2_train.yaml",
+        "task_overrides": {
+            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
+            "SIMULATOR.LEG_TARGET_STATE": "\"NATURAL_GAIT\"",
+            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
+            "SIMULATOR.LOAD_CORRIDOR": "True",
+            "SIMULATOR.LOAD_OBSTACLES": "False",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "10",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "10", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "10", 
+            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
+            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
+            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
+            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[ORIENTATION_TERMINATE]",
+        },
+        "overrides": {
+            "RL.SUCCESS_MEASURE": "COMPOSITE_ANT_REWARD",
+            "RL.REWARD_MEASURE": "COMPOSITE_ANT_REWARD",
+            "SENSORS": "['HEAD_RGB_SENSOR']",
+            "RL.PPO.clip_param": "0.1",
+            "RL.POLICY.ACTION_DIST.max_std": "0.04",
+            "RL.PPO.num_steps": "600",
+        },
+    },
+    
 }
 
 #variations of base experiments:
 experiment_variations: Dict[str, Dict[str,str]] = {
-    #abs gait imitation max_std variations
-    "ant_train_gait_abscontroller_var_v1":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.01"},
-    },
-    "ant_train_gait_abscontroller_var_v2":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.025"},
-    },
-    "ant_train_gait_abscontroller_var_v3":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    "ant_train_gait_abscontroller_var_v4":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.06"},
-    },
-    "ant_train_gait_abscontroller_var_v5":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.075"},
-    },
-    #rel gait imitation + turning variations
-    "ant_train_gait_orientation_rel_v1":{
-        "base_experiment": "ant_train_gait_orientation_template",
-        "task_overrides":{"TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]"},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.1"},
-    },
-    "ant_train_gait_orientation_rel_v2":{
-        "base_experiment": "ant_train_gait_orientation_template",
-        "task_overrides":{
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,2.0,2.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.1"},
-    },
-    #rel gait imitation + turning variations (hypothesis that 0.02 is good max_std)
-    "ant_train_gait_orientation_abs_v1":{
-        "base_experiment": "ant_train_gait_orientation_template",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.02"},
-    },
-    "ant_train_gait_orientation_abs_v2":{
-        "base_experiment": "ant_train_gait_orientation_template",
-        "task_overrides":{
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,2.0,2.0,1.0,1.0,1.0]",
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.02"},
-    },
-    
-    # -- experiments for undergraduate thesis --
-    
-    # Joint Regression to flat state
-    # Try using Rel position controller
-    "ant_flat_position_base_v1":{
-        "base_experiment": "ant_flat_position_base",
-        "task_overrides":{
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION]",
-        },
-        "overrides": {},
-    },
-    
-    # X Delta
-    "ant_delta_x_rel_v1":{
-        "base_experiment": "ant_delta_x_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.07"},
-    },
-    "ant_delta_x_rel_v2":{
-        "base_experiment": "ant_delta_x_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # use abs controller
-    "ant_delta_x_abs_v1":{
-        "base_experiment": "ant_delta_x_base",
-        "task_overrides":{
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.07"},
-    },
-    "ant_delta_x_abs_v2":{
-        "base_experiment": "ant_delta_x_base",
-        "task_overrides":{
-            "TASK.POSSIBLE_ACTIONS": "[LEG_ACTION_ABS]",
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # Need to change vector_root_delta to x_delta
-    "ant_flat_position_base_v2":{
-        "base_experiment": "ant_flat_position_base",
-        "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True"
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    "ant_flat_position_base_v3":{
-        "base_experiment": "ant_flat_position_base",
-        "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True"
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.01"},
-    },
-    
-    # use abs controller
-    "ant_delta_x_abs_v3":{
-        "base_experiment": "ant_delta_x_abs_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.03"},
-    },
-    "ant_delta_x_abs_v4":{
-        "base_experiment": "ant_delta_x_abs_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    "ant_delta_x_abs_v5":{
-        "base_experiment": "ant_delta_x_abs_base",
-        "task_overrides":{},
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.05"},
-    },
-    # Try even smoother actions
-    "ant_delta_x_abs_v6":{
-        "base_experiment": "ant_delta_x_abs_base",
-        "task_overrides":{
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[100.0,1.0,5.0]",    
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # random joint position regression
-    "ant_random_position_v1":{
-        "base_experiment": "ant_flat_position_base",
-        "task_overrides":{
-            "SIMULATOR.LEG_TARGET_STATE": "\"RANDOM\"",
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
-            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTIVE_TERMS": "[\"JOINT_POS\",\"JOINT_MOTOR_POS\",\"JOINT_VEL\",\"JOINT_TARGET\",\"NEXT_JOINT_TARGET\",\"JOINT_POSITION_HISTORY\",\"ACTION_HISTORY\"]",
-        },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # Ant walking with no prior using the relative controller
-    "ant_train_gait_abscontroller_corridor_v1":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    "ant_train_gait_abscontroller_corridor_v2":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # With Forward X
-    "ant_train_gait_abscontroller_corridor_v3":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    "ant_train_gait_abscontroller_corridor_v4":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # With Forward Alignment
-    "ant_train_gait_abscontroller_corridor_v5":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    "ant_train_gait_abscontroller_corridor_v6":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # With Forward X and Forward Alignment
-    "ant_train_gait_abscontroller_corridor_v7":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    "ant_train_gait_abscontroller_corridor_v8":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # TESTING NEW SENSOR
-    "ant_train_gait_abscontroller_corridor_v9_TEST":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "TASK.JOINT_STATE_ERROR.NORMALIZED": "True",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {"RL.POLICY.ACTION_DIST.max_std": "0.04"},
-    },
-    
-    # Experiments with vision introduced
-    "ant_train_gait_abscontroller_corridor_vision_v1":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    "ant_train_gait_abscontroller_corridor_vision_v2":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    
-    # with forward X
-    "ant_train_gait_abscontroller_corridor_vision_v3":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    "ant_train_gait_abscontroller_corridor_vision_v4":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    
-    # with forward alignment
-    "ant_train_gait_abscontroller_corridor_vision_v5":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    "ant_train_gait_abscontroller_corridor_vision_v6":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    
-    # with x location and forward alignment
-    "ant_train_gait_abscontroller_corridor_vision_v7":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600" 
-            },
-    },
-    "ant_train_gait_abscontroller_corridor_vision_v8":{ 
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[X_LOCATION,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0,1.0]",
-            },
-        "overrides": {
-            "RL.POLICY.ACTION_DIST.max_std": "0.04",
-            "SENSORS": "['HEAD_RGB_SENSOR']",
-            "RL.PPO.num_steps": "600"
-            },
-    },
-    
-    # Testing Deep Mimic reward formulation
-    # Just pose mimic
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v1":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    # Include target direction
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v3":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v4":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    # With Vision
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v5":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "SENSORS": "['HEAD_RGB_SENSOR']",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v6":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "True",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "SENSORS": "['HEAD_RGB_SENSOR']",
-                "RL.PPO.num_steps": "600", 
-            },
-    },
-    
-    
-    # Round two of deep mimic experiments
-    
-    # Adding initialization into target pose, random pose frame offset, using deep mimic ppo values
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.1":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-            },
-    },
-    
-    # Using different gamma and clip
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.2":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # Add target heading goal
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.3":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-            },
-    },
-    
-    # Using different gamma and clip
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.4":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # Using deep mimic's exact exponential constants
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.5":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.DEEP_MIMIC_POSE_REWARD.CONSTANT": "-2.0",
-            "TASK.DEEP_MIMIC_JOINT_VELOCITY_REWARD.CONSTANT": "-0.1",
-            "TASK.DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD.CONSTANT": "-40.0",
-            "TASK.DEEP_MIMIC_TARGET_HEADING.CONSTANT": "-2.5",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # Add early terminate for base hitting the ground
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.6":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,BASE_CONTACT_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[BASE_CONTACT_TERMINATE]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300", 
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # Use a higher std to give it a chance to learn to stand up
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.7":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.MEASUREMENTS": "[DEEP_MIMIC_POSE_REWARD,DEEP_MIMIC_JOINT_VELOCITY_REWARD,DEEP_MIMIC_END_EFFECTOR_POSITION_REWARD,DEEP_MIMIC_TARGET_HEADING,X_LOCATION,UPRIGHT_ORIENTATION_DEVIATION_VALUE,FORWARD_ORIENTATION_DEVIATION_VALUE,JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,ORIENTATION_TERMINATE,BASE_CONTACT_TERMINATE,DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,COMPOSITE_ANT_REWARD]",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[DEEP_MIMIC_POSE_COMPOSITE_ANT_REWARD,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[0.7,0.3]",
-            "TASK.COMPOSITE_ANT_REWARD.ADDITIONAL_REQUIREMENTS": "[BASE_CONTACT_TERMINATE]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.1",
-                "RL.PPO.num_steps": "300", 
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # Try training using original joint error formulation, with target heading in addition
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.8":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "90",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "300",
-                "RL.PPO.gamma": "0.95",
-                "RL.PPO.clip_param": "0.2",
-            },
-    },
-    
-    # use original ppo config values (but with gamma lower)
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.9":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,1.0]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600",
-                "RL.PPO.gamma": "0.95",
-            },
-    },
-    
-    # same as above, greater target heading weighting
-    "ant_train_gait_abscontroller_corridor_deep_mimic_v2.10":{
-        "base_experiment": "ant_train_gait_abscontroller_base",
-        "task_overrides":{
-            "ENVIRONMENT.MAX_EPISODE_STEPS": "300",
-            "SIMULATOR.LOAD_CORRIDOR": "True",
-            "SIMULATOR.LOAD_OBSTACLES": "False",
-            "TASK.COMPOSITE_ANT_REWARD.COMPONENTS": "[JOINT_STATE_ERROR,JOINT_STATE_PRODUCT_ERROR,ACTION_SMOOTHNESS,DEEP_MIMIC_TARGET_HEADING]",
-            "TASK.COMPOSITE_ANT_REWARD.WEIGHTS": "[1.0,1.0,1.0,2.0]",
-            "SIMULATOR.INITIALIZE_IN_TARGET_STATE": "True",
-            "SIMULATOR.LEG_TARGET_STATE_OFFSET": "RANDOM",
-            },
-        "overrides": {
-                "RL.POLICY.ACTION_DIST.max_std": "0.04",
-                "RL.PPO.num_steps": "600",
-                "RL.PPO.gamma": "0.95",
-            },
-    },
     
 }
 
