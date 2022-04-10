@@ -209,6 +209,79 @@ experiment_variations: Dict[str, Dict[str,str]] = {
         }, 
         "overrides":{}
     },
+    #--- 04/10 ---
+    "ant_train_gait_abscontroller_5_smooth":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "5",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "5", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "5", 
+        }, 
+        "overrides":{}
+    },
+    "ant_train_gait_abscontroller_5_smooth_seed200":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {
+            "SEED": "200", 
+            "SIMULATOR.SEED": "200",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "5",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "5", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "5", 
+        }, 
+        "overrides":{}
+    },
+    "ant_train_gait_abscontroller_3_smooth":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "3",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "3", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "3", 
+        }, 
+        "overrides":{}
+    },
+    "ant_train_gait_abscontroller_3_smooth_seed200":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {
+            "SEED": "200", 
+            "SIMULATOR.SEED": "200",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.ACTION_HISTORY.NUM_STEPS": "3",
+            "TASK.ANT_OBSERVATION_SPACE_SENSOR.JOINT_POSITION_HISTORY.NUM_STEPS": "3", 
+            "TASK.ACTION_SMOOTHNESS.WINDOW": "3", 
+        }, 
+        "overrides":{}
+    },
+    "ant_train_gait_abscontroller_lr3e-4":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {}, 
+        "overrides":{
+            "RL.PPO.clip_param": "0.1",
+            "RL.PPO.lr": "3e-4"
+        }
+    },
+    "ant_train_gait_abscontroller_lr3e-4_seed200":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {"SEED": "200", "SIMULATOR.SEED": "200"}, 
+        "overrides":{
+            "RL.PPO.clip_param": "0.1",
+            "RL.PPO.lr": "3e-4"
+        }
+    },
+    "ant_train_gait_abscontroller_lr2.5e-4":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {}, 
+        "overrides":{
+            "RL.PPO.clip_param": "0.1",
+            "RL.PPO.lr": "2.5e-4"
+        }
+    },
+    "ant_train_gait_abscontroller_lr2.5e-4_seed200":{
+        "base_experiment":"ant_train_gait_abscontroller_base",
+        "task_overrides": {"SEED": "200", "SIMULATOR.SEED": "200"}, 
+        "overrides":{
+            "RL.PPO.clip_param": "0.1",
+            "RL.PPO.lr": "2.5e-4"
+        }
+    },
 
 }
 
