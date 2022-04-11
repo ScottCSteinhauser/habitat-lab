@@ -376,7 +376,7 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False, subm
         import submitit
         import habitat_baselines.run
         log_folder = "data/submitit_logs"
-        executor = submitit.AutoExecutor(folder=log_folder)
+        executor = submitit.SlurmExecutor(folder=log_folder)
         executor.update_parameters(time=5, partition="devlab", gpus_per_task=1, cpus_per_task=10)
         job = executor.submit(habitat_baselines.run.run_exp, exp_info["config"], run_type, task_override_string, overrides.split(" "))
         print(f"job = {job}")
