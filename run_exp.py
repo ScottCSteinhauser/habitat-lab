@@ -285,6 +285,14 @@ experiment_variations: Dict[str, Dict[str,str]] = {
 
 }
 
+# -------------------------------------------------------------
+# Select experiments for submitit batching
+experiment_batch = [
+    "ant_train_gait_abscontroller_base",
+    "ant_train_gait_abscontroller_deepmimic_base"
+]
+# -------------------------------------------------------------
+
 #merge variations into experiments
 for var,var_info in experiment_variations.items():
     experiments[var] = copy.deepcopy(experiments[var_info["base_experiment"]])
@@ -367,6 +375,18 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False):
     print(full_command)
     os.system(full_command)
 
+def submitit_experiments(experiments, run_type="train"):
+    """
+    experiments: a list of experiment keys to be run.
+    """
+    #schedule the job array with submitit instead of directly executing
+    import submitit
+    log_folder = "data/submitit_logs"
+    executor = submitit.AutoExecutor(folder=log_folder)
+    # the following line tells the scheduler to only run at most 2 jobs at once. By default, this is several hundreds
+    #executor.update_parameters(array_parallelism=2)
+    jobs = executor.map_array(run, experiments)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -386,6 +406,7 @@ if __name__ == "__main__":
         help="name of the experiment as defined in the experiments dict",
     )
     parser.add_argument("--test", action="store_true", help="If provided, sets mini-batches to 1 and environments to 1 for easy debugging.")
+    parser.add_argument("--submitit", action="store_true", help="If set, submits the experiment for SLURM allocation.")
 
     args = parser.parse_args()
 
@@ -401,6 +422,9 @@ if __name__ == "__main__":
         for exp_name in experiments.keys():
             print(run_cmd_prefix + exp_name + run_cmd_postfix)
         print("============================================================")
+    elif(args.submitit):
+        #run the batch of jobs defined in experiment_batch via submitit
+        submitit_experiments(experiment_batch)
     else:
         run_type = "eval" if args.type in ["eval", "quick-eval"] else "train"
         run(experiment=args.exp, run_type=run_type, testing=args.test, quick_eval=(args.type == "quick-eval"))
