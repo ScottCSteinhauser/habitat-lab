@@ -308,7 +308,7 @@ run_types = ["eval", "train"]
 run_base = "python -u habitat_baselines/run.py"
 
 
-def run(experiment=None, run_type="train", testing=False, quick_eval=False):
+def run(experiment=None, run_type="train", testing=False, quick_eval=False, submitit=False):
     assert experiment in experiments
     assert run_type in run_types
 
@@ -327,9 +327,11 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False):
     
     #add task overrides
     task_overrides = exp_info["task_overrides"]
-    full_command += " --task-overrides \""
+    task_override_string = ""
     for key, val in task_overrides.items():
-        full_command += " " + key + " " + val
+        task_override_string += " " + key + " " + val
+    full_command += " --task-overrides \""
+    full_command += task_override_string
     full_command += "\""
 
     overrides = ""
@@ -368,6 +370,18 @@ def run(experiment=None, run_type="train", testing=False, quick_eval=False):
         overrides += " RL.PPO.num_mini_batch 1"
         overrides += " USE_THREADED_VECTOR_ENV True"
 
+    if submitit:
+        print(f"Scheduling job with submitit: {exp_info['config']}")
+        #schedule the job array with submitit instead of directly executing
+        import submitit
+        import habitat_baselines.run
+        log_folder = "data/submitit_logs"
+        executor = submitit.AutoExecutor(folder=log_folder)
+        executor.update_parameters(time=5, partition="devlab", gpus_per_task=1, cpus_per_task=10)
+        job = executor.submit(habitat_baselines.run.run_exp, exp_info["config"], run_type, task_override_string, overrides.split(" "))
+        print(f"job = {job}")
+        return
+
     #add the overrides
     full_command += overrides
 
@@ -383,6 +397,8 @@ def submitit_experiments(experiments, run_type="train"):
     import submitit
     log_folder = "data/submitit_logs"
     executor = submitit.AutoExecutor(folder=log_folder)
+    #set batch parameters
+    executor.update_parameters(time=5, partition="devlab", gpus_per_task=1, cpus_per_task=10)
     # the following line tells the scheduler to only run at most 2 jobs at once. By default, this is several hundreds
     #executor.update_parameters(array_parallelism=2)
     jobs = executor.map_array(run, experiments)
@@ -422,9 +438,9 @@ if __name__ == "__main__":
         for exp_name in experiments.keys():
             print(run_cmd_prefix + exp_name + run_cmd_postfix)
         print("============================================================")
-    elif(args.submitit):
-        #run the batch of jobs defined in experiment_batch via submitit
-        submitit_experiments(experiment_batch)
+    #elif(args.submitit):
+    #    #run the batch of jobs defined in experiment_batch via submitit
+    #    submitit_experiments(experiment_batch)
     else:
         run_type = "eval" if args.type in ["eval", "quick-eval"] else "train"
-        run(experiment=args.exp, run_type=run_type, testing=args.test, quick_eval=(args.type == "quick-eval"))
+        run(experiment=args.exp, run_type=run_type, testing=args.test, quick_eval=(args.type == "quick-eval"), submitit=args.submitit)
